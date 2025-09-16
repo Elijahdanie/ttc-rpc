@@ -598,7 +598,15 @@ export type rpcResponseType<T = any> = {
     data?: T;
 }
 
-const uuid = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+const uuid = () => {
+    const key = 'ttc_scid';
+    let sid = localStorage ? localStorage.getItem(key) : null;
+    if (!sid) {
+        sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem(key, sid);
+    }
+    return sid;
+}
 
 export class ${clientName} {
     // keep static aliases for backward compatibility with existing calls
