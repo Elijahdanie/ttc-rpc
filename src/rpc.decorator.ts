@@ -248,6 +248,23 @@ export class ttc {
 
     static async invoke_event(){}
 
+    static process_auth(token: string){
+        try {
+            const result = token.split(":");
+
+            return {
+                bearer: result[0],
+                _scid: result[1] || null
+            }
+
+        } catch (error) {
+            return {
+                bearer: token,
+                _scid: null
+            }
+        }
+    }
+
     static async invoke(method: string, args: any[], requestConfig: {
         request: Request,
         response: Response
@@ -274,6 +291,9 @@ export class ttc {
 
         const funcRegistry = this.rpcRegistry[method];
 
+        // split _scid from authorization inluded or not
+        const edited_auth_args = this.process_auth(requestConfig.request.headers.authorization || '');
+
         if(funcRegistry.auth) {
             if(!requestConfig.request.headers.authorization) {
                 throw new Error('Unauthorized');
@@ -281,7 +301,7 @@ export class ttc {
             if(!this.authCb) {
                 throw new Error('No auth callback provided for authorization token');
             }
-            auth_data = this.authCb ? await this.authCb(requestConfig.request.headers.authorization) : true;
+            auth_data = this.authCb ? await this.authCb(edited_auth_args.bearer) : true;
         }
 
         // console.log(`Invoking RPC method: ${method} with args:`, args);
@@ -338,7 +358,7 @@ export class ttc {
             response: requestConfig.response,
             auth: auth_data,
             file: requestConfig.request.file,
-            _scid: requestConfig.request.headers['_scid']
+            _scid: edited_auth_args._scid
         };
 
         // const args_ = 
@@ -629,8 +649,7 @@ export class ${clientName} {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: \`Bearer \${token}\`,
-                    _scid: this._scid
+                    Authorization: \`Bearer \${token}:\${${clientName}._scid}\`,
                 },
                 body: JSON.stringify({ method, params })
             });
@@ -656,8 +675,7 @@ export class ${clientName} {
             const response = await fetch(\`\${${clientName}.url}/rpc\`, {
                 method: 'POST',
                 headers: {
-                    Authorization: \`Bearer \${token}\`,
-                    _scid: this._scid
+                    Authorization: \`Bearer \${token}:\${${clientName}._scid}\`,
                 },
                 body: formData
             });
