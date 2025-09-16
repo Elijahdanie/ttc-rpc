@@ -1,0 +1,8 @@
+node_modules
+typedocs
+dev.db
+*.log
+*.key
+*.pub
+.env
+dist

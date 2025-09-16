@@ -1,0 +1,36 @@
+# Source files
+src/
+tsconfig.json
+.gitignore
+
+# Development files
+node_modules/
+logs/
+*.log
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+coverage/
+
+PUBLISHING.md
+
+# Build artifacts (keep only dist/)
+# Everything else will be ignored by default with the files field in package.json

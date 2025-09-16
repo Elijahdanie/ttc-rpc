@@ -1,0 +1,82 @@
+{
+  "name": "ttc-rpc",
+  "version": "2.0.8",
+  "description": "A lightweight TypeScript RPC framework with decorators, schema validation, and automatic client generation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/example.ts",
+    "start": "node dist/index.js",
+    "test:rpc-info": "ts-node src/test-rpc-info.ts",
+    "prepublishOnly": "npm run build && node validate-package.js",
+    "clean": "rm -rf dist",
+    "validate": "node validate-package.js"
+  },
+  "keywords": [
+    "rpc",
+    "typescript",
+    "decorators",
+    "api",
+    "express",
+    "zod"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elijahdanie/ttc-rpc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/elijahdanie/ttc-rpc/issues"
+  },
+  "homepage": "https://github.com/elijahdanie/ttc-rpc#readme",
+  "dependencies": {
+    "@types/express": "4.17.17",
+    "@types/multer": "^2.0.0",
+    "cors": "2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "4.18.2",
+    "multer": "^2.0.2",
+    "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "typedi": "^0.10.0",
+    "zod-to-json-schema": "^3.24.6",
+    "zod-to-ts": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/cors": "2.8.19",
+    "@types/node": "^24.3.0",
+    "nodemon": "3.0.2",
+    "ts-node": "10.9.1",
+    "typescript": "5.2.2",
+    "zod": "^3.24.1"
+  },
+  "peerDependencies": {
+    "zod": "^3.24.1"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/index.js.map",
+    "dist/index.d.ts.map",
+    "dist/rpc.decorator.js",
+    "dist/rpc.decorator.d.ts",
+    "dist/rpc.decorator.js.map",
+    "dist/rpc.decorator.d.ts.map",
+    "dist/server.js",
+    "dist/socket.js",
+    "dist/socket.d.ts",
+    "dist/socket.js.map",
+    "dist/socket.d.ts.map",
+    "dist/rpc-info.js",
+    "dist/rpc-info.d.ts",
+    "dist/rpc-info.js.map",
+    "dist/rpc-info.d.ts.map",
+    "dist/server.d.ts",
+    "dist/server.js.map",
+    "dist/server.d.ts.map",
+    "README.md"
+  ]
+}
