@@ -2,7 +2,6 @@ import bodyParser from "body-parser";
 import multer from "multer";
 import { ttc } from "./rpc.decorator";
 import { generateFullAPIDocumentation } from "./rpc-info";
-import cors from "cors";
 
 
 
@@ -21,7 +20,6 @@ export const handleDefaultMiddleWare = (app: any) => {
     });
 
     // Middleware
-    app.use(cors());
     app.use(bodyParser.json());
 
     // RPC Endpoint
