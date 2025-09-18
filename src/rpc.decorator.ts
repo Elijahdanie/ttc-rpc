@@ -353,7 +353,7 @@ export class ttc {
 
         // console.log(args, 'VALIDATED INPUT ARGS')
         
-        args[args.length] = {
+        args[funcRegistry.params.length] = {
             request: requestConfig.request,
             response: requestConfig.response,
             auth: auth_data,
