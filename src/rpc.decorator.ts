@@ -35,6 +35,7 @@ export class ttc {
         string,
         {
             params: Record<string, any>;
+            param_index: number;
             inputSchema?: ZodSchema<any>;
             outputSchema?: ZodSchema<any>;
             auth?: boolean;
@@ -206,6 +207,7 @@ export class ttc {
         const key = `${className}.${propertyKey}`;
         ttc.rpcRegistry[key] = {
             params,
+            param_index: paramNames.length,
             inputSchema: generatedInputSchema,
             outputSchema: config?.outputSchema,
             auth: config?.auth,
@@ -353,7 +355,7 @@ export class ttc {
 
         // console.log(args, 'VALIDATED INPUT ARGS')
         
-        args[funcRegistry.params.length] = {
+        args[funcRegistry.param_index] = {
             request: requestConfig.request,
             response: requestConfig.response,
             auth: auth_data,
