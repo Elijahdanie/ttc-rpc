@@ -26,28 +26,30 @@ export type rpcResponseTypeGeneric<T = any> = {
     data?: T;
 }
 
+export type registryInfo = DecoratorConfig & {
+    param_index: number; 
+    params: Record<string, any>;
+}
+
+export type DecoratorConfig = {
+    inputSchema?: ZodSchema<any>;
+    outputSchema?: ZodSchema<any>;
+    auth?: boolean | string[];
+    doc?: string;
+    spread?: boolean;
+    endpoint?: string;
+    media?: boolean;
+    validate?: boolean;
+};
+
 export class ttc {
     private static app: any;
     private static generateClient: boolean;
     static socket: ttcSocket;
 
-    private static rpcRegistry: Record<
-        string,
-        {
-            params: Record<string, any>;
-            param_index: number;
-            inputSchema?: ZodSchema<any>;
-            outputSchema?: ZodSchema<any>;
-            auth?: boolean;
-            doc?: string;
-            spread?: boolean;
-            endpoint?: string;
-            media?: boolean;
-            validate?: boolean;
-        }
-    > = {};
+    private static rpcRegistry: Record<string, registryInfo> = {};
 
-    private static authCb: (token: string) => Promise<any>;
+    private static authCb: (token: string, authContext: string[]) => Promise<any>;
     private static socketCb: (socket: Socket) => Promise<any>;
 
     // Helper function to convert TypeScript types to Zod schemas
@@ -120,16 +122,7 @@ export class ttc {
       return cls as any;
     }
 
-    static describe = (config?: {
-        auth?: boolean;
-        doc?: string;
-        media?: boolean;
-        spread?: boolean; // spread means the method does not follow classname.methodname, rather /classname/methodname
-        endpoint?: string; // custom endpoint name for endpoint, enables spread to true, must follow pattern {route1}/{method}/{}....
-        inputSchema?: ZodSchema<any>;
-        outputSchema?: ZodSchema<any>;
-        validate?: boolean;
-    }) => (
+    static describe = (config?: DecoratorConfig) => (
         target: any,
         propertyKey: string,
         descriptor: PropertyDescriptor
@@ -303,7 +296,8 @@ export class ttc {
             if(!this.authCb) {
                 throw new Error('No auth callback provided for authorization token');
             }
-            auth_data = this.authCb ? await this.authCb(edited_auth_args.bearer) : true;
+            const authContext = Array.isArray(funcRegistry.auth) ? funcRegistry.auth : [];
+            auth_data = this.authCb ? await this.authCb(edited_auth_args.bearer, authContext) : true;
         }
 
         // console.log(`Invoking RPC method: ${method} with args:`, args);
@@ -383,7 +377,7 @@ export class ttc {
     static init(config: {
         app: any;
         modules: any[];
-        authCb?: (token: string) => Promise<any>;
+        authCb?: (token: string, authContext: string[]) => Promise<any>;
         socketCb?: (socket: Socket) => Promise<any>;
         generate_client?: boolean;
         middleware?: 'default' | 'custom';
