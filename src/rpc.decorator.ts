@@ -614,12 +614,19 @@ export type rpcResponseType<T = any> = {
     data?: T;
 }
 
+let _Scid_server_cache: string = '';
+
 const uuid = () => {
     const key = 'ttc_scid';
-    let sid = localStorage ? localStorage.getItem(key) : null;
+    let sid = (typeof localStorage !== 'undefined') ? localStorage.getItem(key) : _Scid_server_cache;
     if (!sid) {
         sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        localStorage.setItem(key, sid);
+
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(key, sid);
+        } else {
+            _Scid_server_cache = sid;
+        }
     }
     return sid;
 }
