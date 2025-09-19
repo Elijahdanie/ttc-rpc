@@ -405,7 +405,8 @@ export class ttc {
                         request: req,
                         response: res
                     });
-                    return res.json(rpcResponse);
+                    if(rpcResponse)
+                        return res.json(rpcResponse);
                 });
             }
         }
