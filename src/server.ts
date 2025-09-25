@@ -64,9 +64,7 @@ export const handleDefaultMiddleWare = (app: any) => {
     // API Documentation endpoint
     app.get("/api-docs", async (req, res) => {
       try {
-        const sapikey = req.query.sapikey;
-        const secret = process.env.TTC_API_SECRET;
-        if (sapikey !== secret) {
+        if(!await ttc.authCb(req.headers.authorization as string, [])) {
             return res.status(401).json({ error: "Unauthorized" });
         }
         const apiDocs = generateFullAPIDocumentation();

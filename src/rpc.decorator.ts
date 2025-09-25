@@ -49,7 +49,7 @@ export class ttc {
 
     private static rpcRegistry: Record<string, registryInfo> = {};
 
-    private static authCb: (token: string, authContext: string[]) => Promise<any>;
+    static authCb: (token: string, authContext: string[]) => Promise<any>;
     private static socketCb: (socket: Socket) => Promise<any>;
 
     // Helper function to convert TypeScript types to Zod schemas
