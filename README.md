@@ -17,13 +17,14 @@ A lightweight TypeScript RPC framework with decorators, schema validation, and a
 ## Installation
 
 ```bash
-npm install ttc-rpc zod@^3.24.1
+npm install ttc-rpc
 # or
-yarn add ttc-rpc zod@^3.24.1
+yarn add ttc-rpc
 ```
 
 **Peer Dependencies:**
-- `zod` - Required for schema validation
+- `zod 4` - Required for schema validation
+- we do not support zod 3 anymore
 
 ## Quick Start
 

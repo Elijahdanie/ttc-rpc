@@ -2,7 +2,7 @@ import "reflect-metadata";
 import Container from "typedi";
 import { Response, Request } from "express";
 import { object, ZodSchema, z, string, number, boolean, any, unknown, array } from "zod";
-import zodToJsonSchema from "zod-to-json-schema";
+// import zodToJsonSchema from "zod-to-json-schema";
 import { handleDefaultMiddleWare } from "./server";
 import { ttcSocket } from "./socket";
 import { Socket } from "socket.io";
@@ -10,6 +10,8 @@ import { Socket } from "socket.io";
 export type statusType = 'success' | 'error';
 
 export type ClassType<T = any> = new (...args: any[]) => T;
+
+const zodToJsonSchema = z.toJSONSchema;
 
 export type rpcResponseType = {
     status: statusType;

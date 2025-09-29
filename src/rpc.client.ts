@@ -9,18 +9,33 @@ export type rpcResponseType<T = any> = {
     data?: T;
 }
 
-const uuid = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+let _Scid_server_cache: string = '';
+
+const uuid = () => {
+    const key = 'ttc_scid';
+    let sid = (typeof localStorage !== 'undefined') ? localStorage.getItem(key) : _Scid_server_cache;
+    if (!sid) {
+        sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(key, sid);
+        } else {
+            _Scid_server_cache = sid;
+        }
+    }
+    return sid;
+}
 
 export class RPCClient {
     // keep static aliases for backward compatibility with existing calls
     static token_cb: () => Promise<string>;
     static url = 'http://localhost:3000/rpc';
-    static socket_client_id: string;
+    static _scid: string;
 
-    constructor(url: string, token_cb: () => Promise<string>, socket_cb:(socket: Socket) => Promise<any>) {
+    constructor(url: string, token_cb: () => Promise<string>, socket_cb?: (socket: Socket) => Promise<any>) {
         RPCClient.token_cb = token_cb;
         RPCClient.url = url;
-        RPCClient.socket_client_id = uuid()
+        RPCClient._scid = uuid()
         if(socket_cb)this.connectSocket(url, socket_cb);
     }
 
@@ -32,8 +47,7 @@ export class RPCClient {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                    socket_client_id: this.socket_client_id
+                    Authorization: `Bearer ${token}:${RPCClient._scid}`,
                 },
                 body: JSON.stringify({ method, params })
             });
@@ -59,8 +73,7 @@ export class RPCClient {
             const response = await fetch(`${RPCClient.url}/rpc`, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    socket_client_id: this.socket_client_id
+                    Authorization: `Bearer ${token}:${RPCClient._scid}`,
                 },
                 body: formData
             });
@@ -78,8 +91,8 @@ export class RPCClient {
         try {
             const socket = io(url, {
                 auth: {
-                    token: await RPCClient.token_cb(),
-                    socket_client_id: RPCClient.socket_client_id
+                    authorization: await RPCClient.token_cb(),
+                    _scid: RPCClient._scid
                 }
             });
             if(socket_cb)socket_cb(socket);
