@@ -1,6 +1,6 @@
 import { ttc } from './rpc.decorator';
-import { zodToTs, printNode } from 'zod-to-ts';
 import { ZodSchema } from 'zod';
+import { zodToTs } from './zodToTs';
 
 export interface RPCMethodInfo {
     name: string;
@@ -58,8 +58,7 @@ export function generateRPCMethodsInfo(): RPCServiceInfo {
         // Convert input schema to TypeScript type if it exists
         if (registryEntry.inputSchema) {
             try {
-                const { node } = zodToTs(registryEntry.inputSchema, `${serviceName}_${methodName}_Input`);
-                methodInfo.input_schema = printNode(node);
+                methodInfo.input_schema = zodToTs(registryEntry.inputSchema);
             } catch (error) {
                 console.warn(`Failed to convert input schema for ${fullMethodName}:`, error);
                 methodInfo.input_schema = null;
@@ -69,8 +68,7 @@ export function generateRPCMethodsInfo(): RPCServiceInfo {
         // Convert output schema to TypeScript type if it exists
         if (registryEntry.outputSchema) {
             try {
-                const { node } = zodToTs(registryEntry.outputSchema, `${serviceName}_${methodName}_Output`);
-                methodInfo.output_schema = printNode(node);
+                methodInfo.output_schema = zodToTs(registryEntry.outputSchema);
             } catch (error) {
                 console.warn(`Failed to convert output schema for ${fullMethodName}:`, error);
                 methodInfo.output_schema = null;

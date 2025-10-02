@@ -10,3 +10,7 @@
 - Updated auth callback to accept an additional parameter, authContext, which is an array of strings for more granular authorization control.
 - fixed the uuid in rpc client to support nodejs environment when there's no localstorage reference
 - fixed a bug where rpcResponse was being returned when it was undefined
+
+## 2 October 2025
+- Upgraded to zod 4, replaced zod-to-ts with a custom zodToTs function since the package
+has not been updated to zod 4
