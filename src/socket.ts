@@ -34,18 +34,33 @@ export class ttcSocket {
                     if (_socketCb) _socketCb(socket);
                 }
 
-                // manage _scid
+                // manage _scid - handle duplicate connections
                 if (socket.handshake.auth._scid) {
+                    const existingSocket = this.clients.get(socket.handshake.auth._scid);
+                    
+                    if (existingSocket && existingSocket.connected) {
+                        console.log("Duplicate connection detected for _scid:", socket.handshake.auth._scid, "- disconnecting old socket:", existingSocket.id);
+                        existingSocket.disconnect(true);
+                    }
+                    
                     this.clients.set(socket.handshake.auth._scid, socket);
                     console.log("Client registered with _scid:", socket.handshake.auth._scid);
                 } else {
                     console.log("Warning: Client connected without _scid:", socket.id);
                 }
 
-                // remove from map on disconnect
+                // remove from map on disconnect - only if this socket is the current one
                 socket.on('disconnect', (reason) => {
                     console.log("Client disconnected:", socket.id, "Reason:", reason);
-                    this.clients.delete(socket.handshake.auth._scid);
+                    
+                    // Only remove from map if this socket is still the active one for this _scid
+                    const currentSocket = this.clients.get(socket.handshake.auth._scid);
+                    if (currentSocket && currentSocket.id === socket.id) {
+                        this.clients.delete(socket.handshake.auth._scid);
+                        console.log("Removed _scid from map:", socket.handshake.auth._scid);
+                    } else {
+                        console.log("Socket was already replaced, not removing from map");
+                    }
                 });
 
                 // Handle socket errors

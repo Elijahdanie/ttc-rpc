@@ -1,0 +1,39 @@
+New socket connection attempt: G5Q1VaB2w-HG1KG3AAAB
+Handshake auth: {
+  authorization: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkMDViYjY5My02NzNlLTQ3OTAtYWQyZS0wODU1NjcyZGM4NjkiLCJyb2xlIjoidXNlciIsImlhdCI6MTc2MTEyNDI2MiwiZXhwIjoxNzYxNzI5MDYyfQ.jaXqa8pIUtv7JePWl735JloSib5FO-lCG2K4WBqXu1E',
+  _scid: '9xqwitnrwpajpn42bi5bsa'
+}
+Client authenticated: G5Q1VaB2w-HG1KG3AAAB
+Client registered with _scid: 9xqwitnrwpajpn42bi5bsa
+ttc Queue started...
+New socket connection attempt: -socAhsIe3eeGHCiAAAD
+Handshake auth: {
+  authorization: 'ttc_sk_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhcHBfdXNlcl9lOTM4YTcyNC1kYmIwLTQyYjktYjkxNi03ZjQ3OWZiZjdlNzciLCJhcHBJZCI6InR0Y19hcHBfODRmNmY4MzE2OWI2NDhkYWFlOWFmYjFkNjgzMTY3MzEiLCJyb2xlIjoic2RrIiwiaWF0IjoxNzU4NzU0MDI1LCJleHAiOjE3NjEzNDYwMjV9.9Ea-N36PPkXF7iyo2JdkI5Y-JzvftRW19YnhtaTNkAM',
+  _scid: 'vdogmjy46awf2r2xz14jj'
+}
+Client authenticated: -socAhsIe3eeGHCiAAAD
+Client registered with _scid: vdogmjy46awf2r2xz14jj
+New socket connection attempt: jr0hvi0lzO-vhdQ0AAAF
+Handshake auth: {
+  authorization: 'ttc_sk_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhcHBfdXNlcl82NWFkNzEzNS0xZWQ2LTQ0YWEtOTM0ZS1kNDdiZjIwNjY0MWUiLCJhcHBJZCI6InR0Y19hcHBfNzU4YWRiYWVlYmRmNDc5MGE3ZjU4YjU2YTg5MjQxOTIiLCJyb2xlIjoic2RrIiwiaWF0IjoxNzU5MzU1Nzc0LCJleHAiOjE3NjE5NDc3NzR9.pOHlVEehemU_tQsA86eQ4Q3vHsV8F-pPfvyExWkfTuc',
+  _scid: 'h3nwap3gm3927les1afb74'
+}
+Client authenticated: jr0hvi0lzO-vhdQ0AAAF
+Client registered with _scid: h3nwap3gm3927les1afb74
+New socket connection attempt: 4npnm6cKahqdMSbvAAAI
+Handshake auth: {
+  authorization: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkMDViYjY5My02NzNlLTQ3OTAtYWQyZS0wODU1NjcyZGM4NjkiLCJyb2xlIjoidXNlciIsImlhdCI6MTc2MTEyNDI2MiwiZXhwIjoxNzYxNzI5MDYyfQ.jaXqa8pIUtv7JePWl735JloSib5FO-lCG2K4WBqXu1E',
+  _scid: '9xqwitnrwpajpn42bi5bsa'
+}
+Client authenticated: 4npnm6cKahqdMSbvAAAI
+Client registered with _scid: 9xqwitnrwpajpn42bi5bsa
+New socket connection attempt: 0f9l-RshGWY6fNemAAAJ
+Handshake auth: {
+  authorization: 'ttc_sk_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhcHBfdXNlcl9lOTM4YTcyNC1kYmIwLTQyYjktYjkxNi03ZjQ3OWZiZjdlNzciLCJhcHBJZCI6InR0Y19hcHBfODRmNmY4MzE2OWI2NDhkYWFlOWFmYjFkNjgzMTY3MzEiLCJyb2xlIjoic2RrIiwiaWF0IjoxNzU4NzU0MDI1LCJleHAiOjE3NjEzNDYwMjV9.9Ea-N36PPkXF7iyo2JdkI5Y-JzvftRW19YnhtaTNkAM',
+  _scid: 'vdogmjy46awf2r2xz14jj'
+}
+Client authenticated: 0f9l-RshGWY6fNemAAAJ
+Client registered with _scid: vdogmjy46awf2r2xz14jj
+Fetched messages for conversation ttc_chat_403e80c03bb44c91b00c9cd6fdc59636 page 1 limit 50 0
+Client disconnected: G5Q1VaB2w-HG1KG3AAAB Reason: ping timeout
+Client disconnected: -socAhsIe3eeGHCiAAAD Reason: ping timeout
