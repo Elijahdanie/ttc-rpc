@@ -1,6 +1,6 @@
 {
   "name": "ttc-rpc",
-  "version": "2.0.19",
+  "version": "2.0.21",
   "description": "A lightweight TypeScript RPC framework with decorators, schema validation, and automatic client generation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -75,6 +75,10 @@
     "dist/server.d.ts",
     "dist/server.js.map",
     "dist/server.d.ts.map",
+    "dist/zodToTs.js",
+    "dist/zodToTs.d.ts",
+    "dist/zodToTs.js.map",
+    "dist/zodToTs.d.ts.map",
     "README.md"
   ]
 }
