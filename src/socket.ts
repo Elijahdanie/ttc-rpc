@@ -31,11 +31,23 @@ export class ttcSocket {
                     if (_socketCb) _socketCb(socket);
                 }
 
+                const existing = this.clients.get(socket.handshake.auth._scid);
+                if (existing) {
+                    existing.disconnect(true);
+                }
+
                 this.clients.set(socket.handshake.auth._scid, socket);
 
                 
                 socket.on('disconnect', (reason) => {
-                    this.clients.delete(socket.handshake.auth._scid);
+                    const existing = this.clients.get(socket.handshake.auth._scid);
+                    if(existing && existing.id === socket.id) {
+                        this.clients.delete(socket.handshake.auth._scid);
+                    }
+                });
+
+                socket.on('connect_error', (error) => {
+                    console.log("Socket connection error for client:", socket.id, error);
                 });
 
                 // Handle socket errors
