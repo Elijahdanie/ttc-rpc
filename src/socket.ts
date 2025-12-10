@@ -21,7 +21,7 @@ export class ttcSocket {
         // handle, connection, disconnection and all that shiiz
         this.io.on("connection", async (socket) => {
             
-            console.log(socket.handshake);
+            // console.log(socket.handshake);
             try {
                 const auth = _authCb ? await _authCb(socket.handshake.auth.authorization, []) : true;
                 if (!auth) {
