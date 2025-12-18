@@ -25,7 +25,7 @@ export class UserService {
   @ttc.describe({
     doc: "Creates a user with automatic schema generation from TypeScript types"
   })
-  async createUserAutoSchema(name: string, email: string, age: number) {
+  async createUserAutoSchema(name: string = 'elijah', email: string, age: number = 100) {
     // The decorator will automatically create:
     // z.object({ name: z.string(), email: z.string(), age: z.number() })
     return {

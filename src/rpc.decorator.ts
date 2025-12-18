@@ -140,14 +140,21 @@ export class ttc {
         const paramNames = paramsMatch
             ? paramsMatch[1]
                 .split(",")
-                .map((p) => p.trim())
+                .map((p) => {
+                    if(p.includes('=')){
+                        const parts = p.split('=');
+                        p = parts[0].trim();
+                        return p;
+                    }
+                    return p.trim();
+                })
                 .filter(Boolean)
             : [];
 
         // Get parameter types from reflection
         const types = Reflect.getMetadata("design:paramtypes", target, propertyKey) || [];
         const paramTypes = types.map((type: any) => type?.name || "unknown");
-
+        
         if (config?.inputSchema) {
             // Use provided schema
             const schemaAsJson = zodToJsonSchema(config.inputSchema) as any;
