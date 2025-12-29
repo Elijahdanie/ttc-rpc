@@ -14,3 +14,6 @@
 ## 2 October 2025
 - Upgraded to zod 4, replaced zod-to-ts with a custom zodToTs function since the package
 has not been updated to zod 4
+
+## 29 December 2025
+- Fixed a bug where the function schemas return null for nested objects

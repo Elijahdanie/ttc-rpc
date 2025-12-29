@@ -42,10 +42,10 @@ export function zodToTs(zod: any): string {
     const propType = convertPropertyType(propSchema);
     const optionalMarker = isOptional ? '?' : '';
     
-    properties.push(`  ${propName}${optionalMarker}: ${propType}`);
+    properties.push(`${propName}${optionalMarker}: ${propType}`);
   }
 
-  return `{\n${properties.join(';\n')};\n}`;
+  return properties.length > 0 ? `{ ${properties.join('; ')}; }` : '{}';
 }
 
 function convertPropertyType(property: any): string {
@@ -72,11 +72,18 @@ function convertPropertyType(property: any): string {
     
     case 'object':
       if (property.properties) {
-        return zodToTs({
-          type: 'object',
-          properties: property.properties,
-          required: property.required || []
-        });
+        const nestedProperties: string[] = [];
+        const requiredFields = new Set(property.required || []);
+        
+        for (const [propName, propSchema] of Object.entries(property.properties)) {
+          const isOptional = !requiredFields.has(propName);
+          const propType = convertPropertyType(propSchema);
+          const optionalMarker = isOptional ? '?' : '';
+          
+          nestedProperties.push(`  ${propName}${optionalMarker}: ${propType}`);
+        }
+        
+        return nestedProperties.length > 0 ? `{ ${nestedProperties.join('; ')}; }` : '{}';
       }
       return 'Record<string, any>';
     
