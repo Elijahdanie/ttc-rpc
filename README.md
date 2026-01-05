@@ -535,7 +535,7 @@ All RPC calls return a standardized response:
 
 ```typescript
 type rpcResponseType = {
-  status: 'success' | 'error';
+  status: 'success' | 'error' | 'notFound' | 'unauthorized';
   data?: any;
 }
 ```

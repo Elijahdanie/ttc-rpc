@@ -5,7 +5,7 @@ export class ttcSocket {
     clients: Map<string, Socket> = new Map();
     private io: Server;
 
-    constructor(_httpServer: any, _authCb: (token: string, authContext: string[]) => Promise<any>, _socketCb: (socket: Socket) => Promise<any>) {
+    constructor(_httpServer: any, _authCb: (token: string, authContext: string[], funcName: string) => Promise<any>, _socketCb: (socket: Socket) => Promise<any>) {
         this.io = new Server(_httpServer, {
             cors: {
                 origin: "*",
@@ -23,7 +23,7 @@ export class ttcSocket {
             
             // console.log(socket.handshake);
             try {
-                const auth = _authCb ? await _authCb(socket.handshake.auth.authorization, []) : true;
+                const auth = _authCb ? await _authCb(socket.handshake.auth.authorization, [], '') : true;
                 if (!auth) {
                     socket.disconnect(true);
                     return;

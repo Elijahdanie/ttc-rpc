@@ -7,7 +7,7 @@ import { handleDefaultMiddleWare } from "./server";
 import { ttcSocket } from "./socket";
 import { Socket } from "socket.io";
 
-export type statusType = 'success' | 'error';
+export type statusType = 'success' | 'error' | 'notFound' | 'unauthorized';
 
 export type ClassType<T = any> = new (...args: any[]) => T;
 
@@ -51,7 +51,7 @@ export class ttc {
 
     private static rpcRegistry: Record<string, registryInfo> = {};
 
-    static authCb: (token: string, authContext: string[]) => Promise<any>;
+    static authCb: (token: string, authContext: string[], funcName: string) => Promise<any>;
     private static socketCb: (socket: Socket) => Promise<any>;
 
     // Helper function to convert TypeScript types to Zod schemas
@@ -279,7 +279,7 @@ export class ttc {
         if (!Container.has(className)) {
             // throw new Error(`Service ${className} not found`);
             return {
-                status: "error",
+                status: 'notFound',
                 data: `${className} does not exist in api`,
             }
         }
@@ -288,7 +288,7 @@ export class ttc {
 
         if (!serviceInstance[methodName]) {
             return {
-                status: "error",
+                status: 'notFound',
                 data: `function ${methodName} does not exist in ${className} module`,
             }
         }
@@ -300,13 +300,27 @@ export class ttc {
 
         if(funcRegistry.auth) {
             if(!requestConfig.request.headers.authorization) {
-                throw new Error('Unauthorized');
+                return {
+                    status: 'unauthorized',
+                    data: 'No authorization token provided'
+                };
             }
             if(!this.authCb) {
-                throw new Error('No auth callback provided for authorization token');
+                return {
+                    status: 'error',
+                    data: 'Internal server error: No auth callback defined'
+                };
             }
             const authContext = Array.isArray(funcRegistry.auth) ? funcRegistry.auth : [];
-            auth_data = this.authCb ? await this.authCb(edited_auth_args.bearer, authContext) : true;
+
+            try {
+                 auth_data = this.authCb ? await this.authCb(edited_auth_args.bearer, authContext, method) : true;
+            } catch (error) {
+                return {
+                    status: 'unauthorized',
+                    data: `${error.message || 'Unauthorized'}`
+                };
+            }
         }
 
         // console.log(`Invoking RPC method: ${method} with args:`, args);
