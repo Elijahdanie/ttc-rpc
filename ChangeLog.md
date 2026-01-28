@@ -17,3 +17,7 @@ has not been updated to zod 4
 
 ## 29 December 2025
 - Fixed a bug where the function schemas return null for nested objects
+
+## 28 January 2026
+- Added socket transport support for the rpc calls
+- call client.setTransport('socket | http') to switch between transports

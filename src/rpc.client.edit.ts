@@ -1,38 +1,67 @@
-import { Socket, io } from "socket.io-client"; 
+
+import { io, Socket } from "socket.io-client";
 
 export type callbackType = (method: string, params?: any) => Promise<any>;
-export type mediaCallbackType = (method: string, params?: any, file?: File) => Promise<any>;
+export type mediaCallbackType = (method: string, params?: any, file?: any) => Promise<any>;
 
 export type rpcResponseType<T = any> = {
     status: 'success' | 'error';
     data?: T;
 }
 
-const uuid = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+let _Scid_server_cache: string = '';
 
+const uuid = () => {
+    const key = 'ttc_scid';
+    let sid = (typeof localStorage !== 'undefined') ? localStorage.getItem(key) : _Scid_server_cache;
+    if (!sid) {
+        sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(key, sid);
+        } else {
+            _Scid_server_cache = sid;
+        }
+    }
+    return sid;
+}
 
 export class RPCClient {
     // keep static aliases for backward compatibility with existing calls
     static token_cb: () => Promise<string>;
     static url = 'http://localhost:3000/rpc';
-    client_id: string;
+    static _scid: string;
+    static socket: Socket;
+    static transport: 'http' | 'socket' = 'http';
 
-    constructor(url: string, token_cb: () => Promise<string>, socket_cb:(socket: Socket) => Promise<any>) {
+    constructor(url: string, token_cb: () => Promise<string>, socket_cb?: (socket: Socket) => Promise<any>) {
         RPCClient.token_cb = token_cb;
         RPCClient.url = url;
-        this.client_id = uuid()
+        RPCClient._scid = uuid()
         if(socket_cb)this.connectSocket(url, socket_cb);
     }
 
-    apiCallback: callbackType = async (method: string, params?: any) => {
-        try {
+    static seTransport(tp: 'http' | 'socket'){
+        RPCClient.transport = tp;
+    }
+
+    static apiCallback: callbackType = async (method: string, params?: any) => {
+        if(RPCClient.transport === 'http'){
+            return await RPCClient.invokeHttp(method, params);
+        } else if(RPCClient.transport === 'socket'){
+            return await RPCClient.invokeSocket(method, params);
+        }
+    }
+
+    static invokeHttp: callbackType = async (method: string, params?: any) => {
+         try {
             if (!RPCClient.token_cb) throw new Error('RPCClient.token_cb is not set');
             const token = await RPCClient.token_cb();
-            const response = await fetch(`${RPCClient.url}`, {
+            const response = await fetch(`${RPCClient.url}/rpc`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}:${RPCClient._scid}`,
                 },
                 body: JSON.stringify({ method, params })
             });
@@ -46,7 +75,23 @@ export class RPCClient {
         }
     }
 
-    mediaCallback: mediaCallbackType = async (method: string, params?: any, file?: File) => {
+    static invokeSocket: callbackType = async (method: string, params?: any) => {
+        if(RPCClient.socket) {
+            return new Promise((resolve, reject) => {
+                RPCClient.socket.emit('function_call', { method, params });
+                RPCClient.socket.once('function_response', (response: any) => {
+                    resolve(response);
+                });
+
+                // set a timeout for the response
+                setTimeout(() => {
+                    reject(new Error('Socket API call timed out'));
+                }, 20000);
+            });
+        }
+    }
+
+    static mediaCallback: mediaCallbackType = async (method: string, params?: any, file?: any) => {
         try {
             if (!RPCClient.token_cb) throw new Error('RPCClient.token_cb is not set');
             const token = await RPCClient.token_cb();
@@ -55,10 +100,10 @@ export class RPCClient {
             if (params) formData.append('params', JSON.stringify(params));
             if (file) formData.append('file', file);
 
-            const response = await fetch(`${RPCClient.url}`, {
+            const response = await fetch(`${RPCClient.url}/rpc`, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}:${RPCClient._scid}`,
                 },
                 body: formData
             });
@@ -72,19 +117,21 @@ export class RPCClient {
         }
     }
 
-    private async connectSocket(url: string, socket_cb:(socket: Socket) => Promise<any>) {
+    async connectSocket(url: string, socket_cb:(socket: Socket) => Promise<any>) {
         try {
             const socket = io(url, {
                 auth: {
-                    token: await RPCClient.token_cb(),
-                    client_id: this.client_id
+                    authorization: await RPCClient.token_cb(),
+                    _scid: RPCClient._scid
                 }
             });
+            RPCClient.socket = socket;
             if(socket_cb)socket_cb(socket);
         } catch (error: any) {
             console.error('Error initializing socket:', error.message);
         }
     }
+
 
     UserService = {
         /**
@@ -93,8 +140,8 @@ export class RPCClient {
          * @param {userData: Partial<{ name: string, email: string, age: number }> }
          * @returns {Promise<rpcResponseType<any>>}
          */
-        async createUserWithSchema(userData: Partial<{ name: string, email: string, age: number }>): Promise<rpcResponseType<any>> {
-            return await this.apiCallback('UserService.createUserWithSchema', [userData]);
+        async createUserWithSchema(userData: Partial<{ name: string, email: string, age: number }> ): Promise<rpcResponseType<any>> {
+            return await RPCClient.apiCallback('UserService.createUserWithSchema', [userData]);
         },
         /**
          * Creates a user with automatic schema generation from TypeScript types
@@ -103,39 +150,39 @@ export class RPCClient {
          * @returns {Promise<rpcResponseType<any>>}
          */
         async createUserAutoSchema(name: string, email: string, age: number): Promise<rpcResponseType<any>> {
-            return await this.apiCallback('UserService.createUserAutoSchema', [name, email, age]);
+            return await RPCClient.apiCallback('UserService.createUserAutoSchema', [name, email, age]);
         },
         /**
-         * @param {userData: Partial<{ userData: Partial<{  }>  }> }
+         * @param {userData: Partial<{  }> }
          * @returns {Promise<rpcResponseType<any>>}
          */
-        async updateUser(userData: Partial<{ userData: Partial<{}> }>): Promise<rpcResponseType<any>> {
-            return await this.apiCallback('UserService.updateUser', [userData]);
+        async updateUser(userData: Partial<{  }> ): Promise<rpcResponseType<any>> {
+            return await RPCClient.apiCallback('UserService.updateUser', [userData]);
         },
         /**
          * @param {}
          * @returns {Promise<rpcResponseType<any>>}
          */
         async getAllUsers(): Promise<rpcResponseType<any>> {
-            return await this.apiCallback('UserService.getAllUsers');
+            return await RPCClient.apiCallback('UserService.getAllUsers');
         },
         /**
          * Deletes a user by ID - requires authentication
          *
-         * @param {userId: Partial<{ userId: string }> }
+         * @param {userId: string, boss: any[]}
          * @returns {Promise<rpcResponseType<any>>}
          */
-        async deleteUser(userId: Partial<{ userId: string }>): Promise<rpcResponseType<any>> {
-            return await this.apiCallback('UserService.deleteUser', [userId]);
+        async deleteUser(userId: string, boss: any[]): Promise<rpcResponseType<any>> {
+            return await RPCClient.apiCallback('UserService.deleteUser', [userId, boss]);
         },
         /**
          * Uploads a profile picture for a user with description
          *
-         * @param {userId: string, description: string, file: File}
+         * @param {data: Partial<{ userId: string, description: string }> , file: any}
          * @returns {Promise<rpcResponseType<any>>}
          */
-        async uploadProfilePicture(userId: string, description: string, file: File): Promise<rpcResponseType<any>> {
-            return await this.mediaCallback('UserService.uploadProfilePicture', [userId, description], file);
+        async uploadProfilePicture(data: Partial<{ userId: string, description: string }> , file: any): Promise<rpcResponseType<any>> {
+            return await RPCClient.mediaCallback('UserService.uploadProfilePicture', [data], file);
         },
     }
 

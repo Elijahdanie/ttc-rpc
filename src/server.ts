@@ -64,7 +64,7 @@ export const handleDefaultMiddleWare = (app: any) => {
     // API Documentation endpoint
     app.get("/api-docs", async (req, res) => {
       try {
-        if(!await ttc.authCb(req.headers.authorization as string, [])) {
+        if(!await ttc.authCb(req.headers.authorization as string, [], '')) {
             return res.status(401).json({ error: "Unauthorized" });
         }
         const apiDocs = generateFullAPIDocumentation();

@@ -31,6 +31,8 @@ export class RPCClient {
     static token_cb: () => Promise<string>;
     static url = 'http://localhost:3000/rpc';
     static _scid: string;
+    static socket: Socket;
+    static transport: 'http' | 'socket' = 'http';
 
     constructor(url: string, token_cb: () => Promise<string>, socket_cb?: (socket: Socket) => Promise<any>) {
         RPCClient.token_cb = token_cb;
@@ -39,7 +41,35 @@ export class RPCClient {
         if(socket_cb)this.connectSocket(url, socket_cb);
     }
 
+    seTransport(tp: 'http' | 'socket'){
+        RPCClient.transport = tp;
+    }
+
+    static invokeSocket: callbackType = async (method: string, params?: any) => {
+        if(RPCClient.socket) {
+            return new Promise((resolve, reject) => {
+                RPCClient.socket.emit('function_call', { method, params });
+                RPCClient.socket.once('function_response', (response: any) => {
+                    resolve(response);
+                });
+
+                // set a timeout for the response
+                setTimeout(() => {
+                    reject(new Error('Socket API call timed out'));
+                }, 20000);
+            });
+        }
+    }
+
     static apiCallback: callbackType = async (method: string, params?: any) => {
+        if(RPCClient.transport === 'http'){
+            return await RPCClient.invokeHttp(method, params);
+        } else if(RPCClient.transport === 'socket'){
+            return await RPCClient.invokeSocket(method, params);
+        }
+    }
+
+    static invokeHttp: callbackType = async (method: string, params?: any) => {
         try {
             if (!RPCClient.token_cb) throw new Error('RPCClient.token_cb is not set');
             const token = await RPCClient.token_cb();
@@ -96,6 +126,7 @@ export class RPCClient {
                 }
             });
             if(socket_cb)socket_cb(socket);
+            RPCClient.socket = socket;
         } catch (error: any) {
             console.error('Error initializing socket:', error.message);
         }

@@ -14,6 +14,7 @@ export class UserService {
     })
   })
   async createUserWithSchema(userData: { name: string; email: string; age: number }) {
+    console.log('Creating user with data:', userData);
     return {
       id: '123',
       ...userData,

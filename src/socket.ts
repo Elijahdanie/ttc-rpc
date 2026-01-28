@@ -20,7 +20,7 @@ export class ttcSocket {
 
         // handle, connection, disconnection and all that shiiz
         this.io.on("connection", async (socket) => {
-            
+
             // console.log(socket.handshake);
             try {
                 const auth = _authCb ? await _authCb(socket.handshake.auth.authorization, [], '') : true;
@@ -38,16 +38,39 @@ export class ttcSocket {
 
                 this.clients.set(socket.handshake.auth._scid, socket);
 
-                
+
                 socket.on('disconnect', (reason) => {
                     const existing = this.clients.get(socket.handshake.auth._scid);
-                    if(existing && existing.id === socket.id) {
+                    if (existing && existing.id === socket.id) {
                         this.clients.delete(socket.handshake.auth._scid);
                     }
                 });
 
                 socket.on('connect_error', (error) => {
                     console.log("Socket connection error for client:", socket.id, error);
+                });
+
+                socket.on('function_call', (call: {
+                    method: string,
+                    params: any[]
+                }) => {
+                    ttc.invoke(
+                        call.method,
+                        call.params,
+                        {
+                            request: {
+                                headers: {
+                                    authorization: socket.handshake.auth.authorization,
+                                    ...socket.handshake.headers
+                                }
+                            } as any,
+                            response: socket as any
+                        }
+                    ).then((rpcResponse) => {
+                        socket.emit('function_response', rpcResponse);
+                    }).catch((error) => {
+
+                    });
                 });
 
                 // Handle socket errors

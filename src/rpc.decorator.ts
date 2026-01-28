@@ -29,7 +29,7 @@ export type rpcResponseTypeGeneric<T = any> = {
 }
 
 export type registryInfo = DecoratorConfig & {
-    param_index: number; 
+    param_index: number;
     params: Record<string, any>;
 }
 
@@ -61,11 +61,11 @@ export class ttc {
         }
 
         const schemaFields: Record<string, any> = {};
-        
+
         paramNames.forEach((name, index) => {
             const type = paramTypes[index];
             const typeName = type?.name?.toLowerCase() || 'unknown';
-            
+
             switch (typeName) {
                 case 'string':
                     schemaFields[name] = z.string();
@@ -111,17 +111,17 @@ export class ttc {
     }
 
     static instance<T extends ClassType | string>(name: T):
-      T extends ClassType ? InstanceType<T> :
-      T extends string ? any :
-      never {
-      const finalName = typeof name === 'string' ? name : name.name;
-      const cls = Container.get(finalName);
+        T extends ClassType ? InstanceType<T> :
+        T extends string ? any :
+        never {
+        const finalName = typeof name === 'string' ? name : name.name;
+        const cls = Container.get(finalName);
 
-      if (!cls) {
-        return null as any;
-      }
+        if (!cls) {
+            return null as any;
+        }
 
-      return cls as any;
+        return cls as any;
     }
 
     static describe = (config?: DecoratorConfig) => (
@@ -134,14 +134,14 @@ export class ttc {
 
         let params: Record<string, any> = {};
         let generatedInputSchema: ZodSchema<any> | undefined;
-        
+
         const paramRegex = /\(([^)]*)\)/;
         const paramsMatch = paramRegex.exec(method.toString());
         const paramNames = paramsMatch
             ? paramsMatch[1]
                 .split(",")
                 .map((p) => {
-                    if(p.includes('=')){
+                    if (p.includes('=')) {
                         const parts = p.split('=');
                         p = parts[0].trim();
                         return p;
@@ -154,7 +154,7 @@ export class ttc {
         // Get parameter types from reflection
         const types = Reflect.getMetadata("design:paramtypes", target, propertyKey) || [];
         const paramTypes = types.map((type: any) => type?.name || "unknown");
-        
+
         if (config?.inputSchema) {
             // Use provided schema
             const schemaAsJson = zodToJsonSchema(config.inputSchema) as any;
@@ -181,11 +181,11 @@ export class ttc {
             // Generate schema from parameter types
             if (paramNames.length > 0) {
                 generatedInputSchema = ttc.createZodSchemaFromParams(paramNames, types);
-                
+
                 // Extract params from generated schema for compatibility
                 const schemaAsJson = zodToJsonSchema(generatedInputSchema) as any;
                 const schemaProperties = ttc.getZodTypeName(schemaAsJson.properties || {});
-                
+
                 if (paramNames.length === 1) {
                     const singleParam = paramNames[0];
                     if (Object.keys(schemaProperties).length === 1 && schemaProperties.hasOwnProperty(singleParam)) {
@@ -230,7 +230,7 @@ export class ttc {
         _scid: string;
     } {
         const context = args[args.length - 1];
-        if(!context){
+        if (!context) {
             return {} as any;
         }
         return {
@@ -242,17 +242,15 @@ export class ttc {
         };
     }
 
-    static io(_scid: string){
-        if(!_scid) return null;
-        if(!this.socket) return null;
-        if(!this.socket.clients) return null;
-        if(!this.socket.clients.has(_scid)) return null;
+    static io(_scid: string) {
+        if (!_scid) return null;
+        if (!this.socket) return null;
+        if (!this.socket.clients) return null;
+        if (!this.socket.clients.has(_scid)) return null;
         return this.socket.clients.get(_scid);
     }
 
-    static async invoke_event(){}
-
-    static process_auth(token: string){
+    static process_auth(token: string) {
         try {
             const result = token.split(":");
 
@@ -272,7 +270,7 @@ export class ttc {
     static async invoke(method: string, args: any[], requestConfig: {
         request: Request,
         response: Response
-    }): Promise <rpcResponseType> {
+    }): Promise<rpcResponseType> {
 
         const [className, methodName] = method.split(".");
         let auth_data = null;
@@ -298,14 +296,14 @@ export class ttc {
         // split _scid from authorization inluded or not
         const edited_auth_args = this.process_auth(requestConfig.request.headers.authorization || '');
 
-        if(funcRegistry.auth) {
-            if(!requestConfig.request.headers.authorization) {
+        if (funcRegistry.auth) {
+            if (!requestConfig.request.headers.authorization) {
                 return {
                     status: 'unauthorized',
                     data: 'No authorization token provided'
                 };
             }
-            if(!this.authCb) {
+            if (!this.authCb) {
                 return {
                     status: 'error',
                     data: 'Internal server error: No auth callback defined'
@@ -314,7 +312,7 @@ export class ttc {
             const authContext = Array.isArray(funcRegistry.auth) ? funcRegistry.auth : [];
 
             try {
-                 auth_data = this.authCb ? await this.authCb(edited_auth_args.bearer, authContext, method) : true;
+                auth_data = this.authCb ? await this.authCb(edited_auth_args.bearer, authContext, method) : true;
             } catch (error) {
                 return {
                     status: 'unauthorized',
@@ -325,11 +323,11 @@ export class ttc {
 
         // console.log(`Invoking RPC method: ${method} with args:`, args);
 
-        if(funcRegistry.media){
+        if (funcRegistry.media) {
             // form data collates prameters as string so we need to convert it to object
-            args = typeof args === 'string' ? JSON.parse(args as string): args;
+            args = typeof args === 'string' ? JSON.parse(args as string) : args;
         }
-        
+
         // Ensure args is an array
         if (!Array.isArray(args)) {
             args = args ? [args] : [];
@@ -346,15 +344,15 @@ export class ttc {
                     // For multiple parameters, create an object from parameter names and validate
                     const paramNames = Object.keys(funcRegistry.params);
                     const paramObj: Record<string, any> = {};
-                    
+
                     paramNames.forEach((name, index) => {
                         if (index < args.length) {
                             paramObj[name] = args[index];
                         }
                     });
-                    
+
                     const validatedObj = funcRegistry.inputSchema.parse(paramObj);
-                    
+
                     // Update args array with validated values
                     paramNames.forEach((name, index) => {
                         if (index < args.length) {
@@ -371,7 +369,7 @@ export class ttc {
         }
 
         // console.log(args, 'VALIDATED INPUT ARGS')
-        
+
         args[funcRegistry.param_index] = {
             request: requestConfig.request,
             response: requestConfig.response,
@@ -381,20 +379,20 @@ export class ttc {
         };
 
         // const args_ = 
-       try {
-         const response = await serviceInstance[methodName](...args);
-         if(response) {
+        try {
+            const response = await serviceInstance[methodName](...args);
+            if (response) {
+                return {
+                    status: 'success',
+                    data: response
+                }
+            }
+        } catch (error: any) {
             return {
-                status: 'success',
-                data: response
+                status: 'error',
+                data: error.message
             }
         }
-       } catch (error: any) {
-         return {
-            status: 'error',
-            data: error.message
-         }
-       }
     }
 
     static init(config: {
@@ -428,13 +426,13 @@ export class ttc {
                         request: req,
                         response: res
                     });
-                    if(rpcResponse)
+                    if (rpcResponse)
                         return res.json(rpcResponse);
                 });
             }
         }
 
-        if(!middleware || middleware === 'default') {
+        if (!middleware || middleware === 'default') {
             handleDefaultMiddleWare(app);
         }
 
@@ -461,7 +459,7 @@ export class ttc {
     }
 
     private static formatType(type: any): string {
-        if(type === 'array') {
+        if (type === 'array') {
             return 'any[]';
         }
         if (typeof type === 'string') {
@@ -478,7 +476,7 @@ export class ttc {
 
     private static formatOutputType(schemaJson: any): string {
         if (!schemaJson) return 'any';
-        
+
         // Handle basic types
         if (schemaJson.type === 'string') {
             // Handle string enums
@@ -492,18 +490,18 @@ export class ttc {
             if (schemaJson.format === 'uri') return 'string';
             return 'string';
         }
-        
+
         if (schemaJson.type === 'number' || schemaJson.type === 'integer') {
             return 'number';
         }
-        
+
         if (schemaJson.type === 'boolean') return 'boolean';
-        
+
         if (schemaJson.type === 'array') {
             const itemType = schemaJson.items ? this.formatOutputType(schemaJson.items) : 'any';
             return `${itemType}[]`;
         }
-        
+
         // Handle objects
         if (schemaJson.type === 'object' && schemaJson.properties) {
             const required = schemaJson.required || [];
@@ -515,30 +513,30 @@ export class ttc {
                 .join('; ');
             return `{ ${properties} }`;
         }
-        
+
         // Handle allOf (merging schemas)
         if (schemaJson.allOf) {
             const mergedTypes = schemaJson.allOf.map((schema: any) => this.formatOutputType(schema));
             // For allOf, we need to intersect the types
             return mergedTypes.join(' & ');
         }
-        
+
         // Handle enums at top level
         if (schemaJson.enum) {
             return schemaJson.enum.map((val: any) => `'${val}'`).join(' | ');
         }
-        
+
         // Handle unions (anyOf, oneOf)
         if (schemaJson.anyOf || schemaJson.oneOf) {
             const unions = schemaJson.anyOf || schemaJson.oneOf;
             return unions.map((union: any) => this.formatOutputType(union)).join(' | ');
         }
-        
+
         // Handle additionalProperties or any type
         if (schemaJson.additionalProperties === true || Object.keys(schemaJson).length === 0) {
             return 'any';
         }
-        
+
         return 'any';
     }
 
@@ -550,10 +548,10 @@ export class ttc {
             if (!services[service]) {
                 services[service] = [];
             }
-            
+
             const registryEntry = ttc.rpcRegistry[key];
 
-            if(registryEntry.spread) {
+            if (registryEntry.spread) {
                 // Skip spread methods for client generation
                 continue;
             }
@@ -562,7 +560,7 @@ export class ttc {
             const outputSchema = registryEntry.outputSchema;
             const isMediaMethod = registryEntry.media;
             const methodDoc = registryEntry.doc; // Get the documentation
-            
+
             const paramNames = Object.keys(params);
 
             // Generate output type from output schema
@@ -579,7 +577,7 @@ export class ttc {
 
             // Add file parameter for media methods
             const allParams = isMediaMethod ? [...paramNames, 'file'] : paramNames;
-            
+
             // Build parameter list with types for function signature
             const paramSignature = allParams
                 .map(p => p === 'file' ? `${p}: any` : `${p}: ${this.formatType(params[p])}`)
@@ -592,19 +590,19 @@ export class ttc {
 
             // Choose the appropriate callback based on media method
             const callbackMethod = isMediaMethod ? 'mediaCallback' : 'apiCallback';
-            const callbackParams = isMediaMethod 
+            const callbackParams = isMediaMethod
                 ? `'${key}'${paramNames.length ? ", [" + paramNames.join(", ") + "]" : ", []"}, file`
                 : `'${key}'${paramNames.length ? ", [" + paramNames.join(", ") + "]" : ""}`;
 
             // Build JSDoc comment with optional documentation
             const jsdocLines = [`        /**`];
-            
+
             // Add method description if available
             if (methodDoc) {
                 jsdocLines.push(`         * ${methodDoc}`);
                 jsdocLines.push(`         *`);
             }
-            
+
             // Add parameter documentation
             jsdocLines.push(`         * @param {${typeComment}}`);
             jsdocLines.push(`         * @returns {Promise<rpcResponseType<${returnType}>>}`);
@@ -660,6 +658,8 @@ export class ${clientName} {
     static token_cb: () => Promise<string>;
     static url = 'http://localhost:3000/rpc';
     static _scid: string;
+    static socket: Socket;
+    static transport: 'http' | 'socket' = 'http';
 
     constructor(url: string, token_cb: () => Promise<string>, socket_cb?: (socket: Socket) => Promise<any>) {
         ${clientName}.token_cb = token_cb;
@@ -668,9 +668,37 @@ export class ${clientName} {
         if(socket_cb)this.connectSocket(url, socket_cb);
     }
 
+    seTransport(tp: 'http' | 'socket'){
+        ${clientName}.transport = tp;
+    }
+
+    static invokeSocket: callbackType = async (method: string, params?: any) => {
+        if(${clientName}.socket) {
+            return new Promise((resolve, reject) => {
+                ${clientName}.socket.emit('function_call', { method, params });
+                ${clientName}.socket.once('function_response', (response: any) => {
+                    resolve(response);
+                });
+
+                // set a timeout for the response
+                setTimeout(() => {
+                    reject(new Error('Socket API call timed out'));
+                }, 20000);
+            });
+        }
+    }
+
     static apiCallback: callbackType = async (method: string, params?: any) => {
+        if(${clientName}.transport === 'http'){
+            return await ${clientName}.invokeHttp(method, params);
+        } else if(${clientName}.transport === 'socket'){
+            return await ${clientName}.invokeSocket(method, params);
+        }
+    }
+
+    static invokeHttp: callbackType = async (method: string, params?: any) => {
         try {
-            if (!${clientName}.token_cb) throw new Error('RPCClient.token_cb is not set');
+            if (!${clientName}.token_cb) throw new Error('${clientName}.token_cb is not set');
             const token = await ${clientName}.token_cb();
             const response = await fetch(\`\${${clientName}.url}/rpc\`, {
                 method: 'POST',
@@ -692,7 +720,7 @@ export class ${clientName} {
 
     static mediaCallback: mediaCallbackType = async (method: string, params?: any, file?: any) => {
         try {
-            if (!${clientName}.token_cb) throw new Error('RPCClient.token_cb is not set');
+            if (!${clientName}.token_cb) throw new Error('${clientName}.token_cb is not set');
             const token = await ${clientName}.token_cb();
             const formData = new FormData();
             formData.append('method', method);
@@ -725,6 +753,7 @@ export class ${clientName} {
                 }
             });
             if(socket_cb)socket_cb(socket);
+            ${clientName}.socket = socket;
         } catch (error: any) {
             console.error('Error initializing socket:', error.message);
         }
@@ -734,5 +763,5 @@ export class ${clientName} {
 ${serviceBlocks}
 }
 `;
-}
+    }
 }
