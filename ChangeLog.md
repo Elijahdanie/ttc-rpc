@@ -21,3 +21,6 @@ has not been updated to zod 4
 ## 28 January 2026
 - Added socket transport support for the rpc calls
 - call client.setTransport('socket | http') to switch between transports
+
+## 29 January 2026
+- Fixed a bug were ttc _scid was not being sent in the socket transport authorization header

@@ -60,16 +60,22 @@ export class ttcSocket {
                         {
                             request: {
                                 headers: {
-                                    authorization: socket.handshake.auth.authorization,
+                                    authorization: `${socket.handshake.auth.authorization}:${socket.handshake.auth._scid}`,
                                     ...socket.handshake.headers
                                 }
                             } as any,
                             response: socket as any
                         }
                     ).then((rpcResponse) => {
-                        socket.emit('function_response', rpcResponse);
-                    }).catch((error) => {
-
+                        socket.emit('function_response', {
+                            status: 'success',
+                            data: rpcResponse
+                        });
+                    }).catch((error: any) => {
+                        socket.emit('function_response', {
+                            status: 'error',
+                            data: error.message || error
+                        });
                     });
                 });
 
