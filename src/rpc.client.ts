@@ -47,8 +47,8 @@ export class RPCClient {
 
     static invokeSocket: callbackType = async (method: string, params?: any) => {
         if(RPCClient.socket) {
+            RPCClient.socket.emit('function_call', { method, params });
             return new Promise((resolve, reject) => {
-                RPCClient.socket.emit('function_call', { method, params });
                 RPCClient.socket.once('function_response', (response: any) => {
                     resolve(response);
                 });

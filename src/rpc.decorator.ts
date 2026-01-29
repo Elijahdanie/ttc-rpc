@@ -674,8 +674,8 @@ export class ${clientName} {
 
     static invokeSocket: callbackType = async (method: string, params?: any) => {
         if(${clientName}.socket) {
+            ${clientName}.socket.emit('function_call', { method, params });
             return new Promise((resolve, reject) => {
-                ${clientName}.socket.emit('function_call', { method, params });
                 ${clientName}.socket.once('function_response', (response: any) => {
                     resolve(response);
                 });
