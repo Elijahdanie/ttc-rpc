@@ -67,10 +67,7 @@ export class ttcSocket {
                             response: socket as any
                         }
                     ).then((rpcResponse) => {
-                        socket.emit('function_response', {
-                            status: 'success',
-                            data: rpcResponse
-                        });
+                        socket.emit('function_response', rpcResponse);
                     }).catch((error: any) => {
                         socket.emit('function_response', {
                             status: 'error',

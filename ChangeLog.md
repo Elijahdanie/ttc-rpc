@@ -24,3 +24,6 @@ has not been updated to zod 4
 
 ## 29 January 2026
 - Fixed a bug were ttc _scid was not being sent in the socket transport authorization header
+
+## 31 January 2026
+- Fixed error where socket response returned nested status messages
