@@ -401,6 +401,10 @@ export class ttc {
         authCb?: (token: string, authContext: string[]) => Promise<any>;
         socketCb?: (socket: Socket) => Promise<any>;
         generate_client?: boolean;
+        options?: {
+            requestSizeLimit?: string;
+            maxFileSize?: number;
+        };
         middleware?: 'default' | 'custom';
     }) {
 
@@ -433,7 +437,7 @@ export class ttc {
         }
 
         if (!middleware || middleware === 'default') {
-            handleDefaultMiddleWare(app);
+            handleDefaultMiddleWare(app, config.options || {});
         }
 
         return this;

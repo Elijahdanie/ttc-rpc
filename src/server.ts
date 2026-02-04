@@ -5,13 +5,16 @@ import { generateFullAPIDocumentation } from "./rpc-info";
 
 
 
-export const handleDefaultMiddleWare = (app: any) => {
+export const handleDefaultMiddleWare = (app: any, options: {
+    requestSizeLimit?: string;
+    maxFileSize?: number;
+}) => {
     // Configure multer for file upload
     const storage = multer.memoryStorage();
     const upload = multer({
         storage,
         limits: {
-            fileSize: 10 * 1024 * 1024, // 10MB limit
+            fileSize: options.maxFileSize || 10 * 1024 * 1024, // 10MB limit
         },
         fileFilter: (req: any, file: any, cb: any) => {
             // Allow all file types for now, but you can add restrictions here
@@ -20,7 +23,9 @@ export const handleDefaultMiddleWare = (app: any) => {
     });
 
     // Middleware
-    app.use(bodyParser.json());
+    app.use(bodyParser.json({
+        limit: options.requestSizeLimit || '1mb'
+    }));
 
     // RPC Endpoint
     app.use("/rpc", upload.single("file") as any, async (req, res) => {

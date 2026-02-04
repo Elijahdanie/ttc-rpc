@@ -27,3 +27,6 @@ has not been updated to zod 4
 
 ## 31 January 2026
 - Fixed error where socket response returned nested status messages
+
+## 4 February 2026
+- Added options to the rpc decorator to allow configuration of request size limits for both JSON body and file uploads. These can be set using the `options` property in the decorator configuration.
