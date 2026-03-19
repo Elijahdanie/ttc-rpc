@@ -30,3 +30,6 @@ has not been updated to zod 4
 
 ## 4 February 2026
 - Added options to the rpc decorator to allow configuration of request size limits for both JSON body and file uploads. These can be set using the `options` property in the decorator configuration.
+
+## 19 March 2026
+- Added a meta decorator option for custom metadata users can apply to their function

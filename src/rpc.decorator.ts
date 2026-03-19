@@ -38,6 +38,7 @@ export type DecoratorConfig = {
     outputSchema?: ZodSchema<any>;
     auth?: boolean | string[];
     doc?: string;
+    meta?: any,
     spread?: boolean;
     endpoint?: string;
     media?: boolean;
@@ -209,6 +210,7 @@ export class ttc {
         const key = `${className}.${propertyKey}`;
         ttc.rpcRegistry[key] = {
             params,
+            meta: config.meta,
             param_index: paramNames.length,
             inputSchema: generatedInputSchema,
             outputSchema: config?.outputSchema,
