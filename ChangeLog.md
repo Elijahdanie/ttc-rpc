@@ -33,3 +33,5 @@ has not been updated to zod 4
 
 ## 19 March 2026
 - Added a meta decorator option for custom metadata users can apply to their function
+- Further modifications meta was removed because it was'nt practical
+- Added hide option to the describe decorator, this option hides the function from the docs but makes it available in the rpc.client.ts, this is used specifically by the ttc-origin-server to limit what functions ai can see or not but still accessible via the web client

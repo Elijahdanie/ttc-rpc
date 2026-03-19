@@ -55,29 +55,29 @@ export const handleDefaultMiddleWare = (app: any, options: {
         }
     });
 
-    app.get("/methods", async (req, res) => {
-        const sapikey = req.query.sapikey;
-        const secret = process.env.TTC_API_SECRET;
-        if (sapikey !== secret) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
-      const methods = await ttc.generateClientScript();
-      console.log("Available RPC methods:", methods);
-      res.type("text/javascript").send(methods);
-    });
+    // app.get("/methods", async (req, res) => {
+    //     const sapikey = req.query.sapikey;
+    //     const secret = process.env.TTC_API_SECRET;
+    //     if (sapikey !== secret) {
+    //         return res.status(401).json({ error: "Unauthorized" });
+    //     }
+    //   const methods = await ttc.generateClientScript();
+    //   console.log("Available RPC methods:", methods);
+    //   res.type("text/javascript").send(methods);
+    // });
 
-    // API Documentation endpoint
-    app.get("/api-docs", async (req, res) => {
-      try {
-        if(!await ttc.authCb(req.headers.authorization as string, [], '')) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
-        const apiDocs = generateFullAPIDocumentation();
-        res.json(apiDocs);
-      } catch (error: any) {
-        console.log("Error generating API documentation:", error);
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        return res.status(500).json({ error: errorMessage });
-      }
-    });
+    // // API Documentation endpoint
+    // app.get("/api-docs", async (req, res) => {
+    //   try {
+    //     if(!await ttc.authCb(req.headers.authorization as string, [], '')) {
+    //         return res.status(401).json({ error: "Unauthorized" });
+    //     }
+    //     const apiDocs = generateFullAPIDocumentation();
+    //     res.json(apiDocs);
+    //   } catch (error: any) {
+    //     console.log("Error generating API documentation:", error);
+    //     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    //     return res.status(500).json({ error: errorMessage });
+    //   }
+    // });
 };

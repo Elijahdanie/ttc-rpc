@@ -1,4 +1,4 @@
-import { ttc } from './rpc.decorator';
+import { DecoratorConfig, ttc } from './rpc.decorator';
 import { ZodSchema } from 'zod';
 import { zodToTs } from './zodToTs';
 
@@ -14,16 +14,17 @@ export interface RPCServiceInfo {
     [serviceName: string]: RPCMethodInfo[];
 }
 
-interface RegistryEntry {
-    params: Record<string, any>;
-    inputSchema?: ZodSchema<any>;
-    outputSchema?: ZodSchema<any>;
-    auth?: boolean;
-    doc?: string;
-    spread?: boolean;
-    endpoint?: string;
-    media?: boolean;
-}
+// interface RegistryEntry {
+//     params: Record<string, any>;
+//     inputSchema?: ZodSchema<any>;
+//     outputSchema?: ZodSchema<any>;
+//     auth?: boolean;
+//     doc?: string;
+//     hide: boolean;
+//     spread?: boolean;
+//     endpoint?: string;
+//     media?: boolean;
+// }
 
 /**
  * Generates a JSON representation of all registered RPC methods
@@ -36,11 +37,11 @@ export function generateRPCMethodsInfo(): RPCServiceInfo {
     const registry = ttc.getRegistry();
     
     for (const [fullMethodName, registryEntryRaw] of Object.entries(registry)) {
-        const registryEntry = registryEntryRaw as RegistryEntry;
+        const registryEntry = registryEntryRaw as DecoratorConfig;
         const [serviceName, methodName] = fullMethodName.split('.');
         
         // Skip spread methods as they're handled differently
-        if (registryEntry.spread) {
+        if (registryEntry.spread || registryEntry.hide) {
             continue;
         }
         
@@ -52,7 +53,7 @@ export function generateRPCMethodsInfo(): RPCServiceInfo {
         const methodInfo: RPCMethodInfo = {
             name: methodName,
             description: registryEntry.doc,
-            permission: registryEntry.auth
+            permission: registryEntry.auth as any
         };
         
         // Convert input schema to TypeScript type if it exists
