@@ -6,3 +6,4 @@ dev.db
 *.pub
 .env
 dist
+.tentarcles.bot

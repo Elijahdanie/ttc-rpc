@@ -32,14 +32,13 @@ has not been updated to zod 4
 - Added options to the rpc decorator to allow configuration of request size limits for both JSON body and file uploads. These can be set using the `options` property in the decorator configuration.
 
 ## 19 March 2026
+- Added a meta decorator option for custom metadata users can apply to their function
+- Further modifications meta was removed because it was'nt practical
+- Added hide option to the describe decorator, this option hides the function from the docs but makes it available in the rpc.client.ts, this is used specifically by the ttc-origin-server to limit what functions ai can see or not but still accessible via the web client
 
-## 19 March 2026
+## 26 March 2026 (Update)
 - Added 'hide' option to DecoratorConfig to hide functions from API documentation while keeping them accessible via RPC client
 - Added 'response' option to DecoratorConfig to control whether functions return data in response (default: true)
 - Modified rpc-info.ts to skip hidden methods when generating API documentation
 - Updated server.ts to comment out /methods and /api-docs endpoints by default
 - Version bump to 2.1.6
-
-- Added a meta decorator option for custom metadata users can apply to their function
-- Further modifications meta was removed because it was'nt practical
-- Added hide option to the describe decorator, this option hides the function from the docs but makes it available in the rpc.client.ts, this is used specifically by the ttc-origin-server to limit what functions ai can see or not but still accessible via the web client

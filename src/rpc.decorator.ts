@@ -39,6 +39,7 @@ export type DecoratorConfig = {
     auth?: boolean | string[];
     doc?: string;
     hide?: boolean,
+    response?: boolean,
     spread?: boolean;
     endpoint?: string;
     media?: boolean;
@@ -211,6 +212,7 @@ export class ttc {
         ttc.rpcRegistry[key] = {
             params,
             hide: config.hide,
+            response: config.response ? config.response : true,
             param_index: paramNames.length,
             inputSchema: generatedInputSchema,
             outputSchema: config?.outputSchema,
@@ -387,6 +389,10 @@ export class ttc {
                 return {
                     status: 'success',
                     data: response
+                }
+            } else if (!funcRegistry.response){
+                return {
+                    status: 'success'
                 }
             }
         } catch (error: any) {
