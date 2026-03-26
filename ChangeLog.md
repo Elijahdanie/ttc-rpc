@@ -41,4 +41,4 @@ has not been updated to zod 4
 - Added 'response' option to DecoratorConfig to control whether functions return data in response (default: true)
 - Modified rpc-info.ts to skip hidden methods when generating API documentation
 - Updated server.ts to comment out /methods and /api-docs endpoints by default
-- Version bump to 2.1.6
+- Version bump to 2.1.7

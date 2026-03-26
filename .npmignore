@@ -32,5 +32,7 @@ coverage/
 
 PUBLISHING.md
 
+.tentarcles.bot
+
 # Build artifacts (keep only dist/)
 # Everything else will be ignored by default with the files field in package.json
