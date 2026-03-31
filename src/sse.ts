@@ -17,7 +17,6 @@ export class SSEManager {
 
     clients: Map<string, SSESocket> = new Map();
     retryCache: Map<string, Set<TTCSSEEventData>> = new Map();
-    garbageEvents: TTCSSEEventData[] = [];
 
     constructor(server: Express, _authCb: (token: string, authContext: string[], funcName: string,) => Promise<any>,
         _socketCb: (socket: SSESocket) => Promise<any>) {
@@ -34,10 +33,10 @@ export class SSEManager {
             }
         })
 
-        // check for deleted 
-        // setInterval(()=>{
-        //     this.garbageEvents = [];
-        // }, 5000)
+        // check for expired events 
+        setInterval(()=>{
+            
+        }, 5000)
 
     }
 
@@ -58,10 +57,10 @@ export class SSEManager {
                         const clientEvent = `event: ${event}\ndata: ${dataString}\n\n`;
                         console.log(clientEvent);
                         response.write(clientEvent, (error) => {
-                            console.log(error, 'error');
+                            // console.log(error, 'error');
                             if(error){
                                 this.cacheRetry(clientId, event, data);
-                                resolve(false);
+                                reject(false);
                             } else {
                                 resolve(true)
                             }
@@ -149,8 +148,10 @@ export class SSEManager {
                 // cachedSet.delete(payload)
                 // console.log('emmiting', cachedSet)
             }
-            console.log('deleting', _scid)
-            this.retryCache.set(_scid, null);
+            // console.log('deleting', _scid)
+            setTimeout(()=>{
+                this.retryCache.delete(_scid);
+            }, 2000);
         }
     }
 

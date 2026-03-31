@@ -15,6 +15,6 @@ console.log(cmd);
 setTimeout(()=>{
     if(cmd === 'send'){
       client.UserService.deleteUser("userid", []).then(res=>console.log(res)).catch(err=>console.log(err))
-      process.exit(0)
+      // process.exit(0)
     }
 }, 1000)
