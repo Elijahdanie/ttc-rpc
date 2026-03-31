@@ -42,3 +42,5 @@ has not been updated to zod 4
 - Modified rpc-info.ts to skip hidden methods when generating API documentation
 - Updated server.ts to comment out /methods and /api-docs endpoints by default
 - Version bump to 2.1.7
+
+## 

@@ -1,5 +1,4 @@
 
-import { io, Socket } from "socket.io-client";
 
 export type callbackType = (method: string, params?: any) => Promise<any>;
 export type mediaCallbackType = (method: string, params?: any, file?: any) => Promise<any>;
@@ -26,35 +25,134 @@ const uuid = () => {
     return sid;
 }
 
+
+// Minimal EventSource interface
+interface TTCEventSource {
+    addEventListener(type: string, listener: (event: any) => void): void;
+    removeEventListener(type: string, listener: (event: any) => void): void;
+    close(): void;
+}
+
+type EventCallback = (data: any) => any;
+
+export class SSEClient {
+
+    private eventSource: TTCEventSource;
+    private EventSourceClass: any;
+    private callbackMap: Map<string, Map<EventCallback, (event: any) => void>> = new Map();
+
+    constructor() {
+        // Check if we're in a browser environment
+        if (typeof window !== 'undefined' && 'EventSource' in window) {
+            // Use native browser EventSource
+            this.EventSourceClass = window.EventSource;
+        } else {
+            // Node.js environment - will dynamically import
+            this.EventSourceClass = null;
+        }
+    }
+
+    async connect(url: string, scid: string, token_cb: () => Promise<string>,
+        socket_cb: (socket: SSEClient) => Promise<any>) {
+        console.log(scid, "SCID")
+        // For Node.js, dynamically import eventsource if not already available
+        if (!this.EventSourceClass && typeof window === 'undefined') {
+            try {
+                // Dynamic import for Node.js
+                const { EventSource } = await import('eventsource');
+                this.EventSourceClass = EventSource;
+            } catch (error) {
+                throw new Error('eventsource package is required for Node.js environments, Please install it with: npm install eventsource');
+            }
+        }
+
+        const _url = `${url}/stream?scid=${scid}`;
+
+        await fetch(`${_url}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': await token_cb()
+            }
+        });
+
+        // Create EventSource connection
+        this.eventSource = new this.EventSourceClass(`${_url}`) as TTCEventSource;
+        socket_cb(this);
+    }
+
+    on(event: string, cb: EventCallback) {
+        // Create wrapper function that parses the data
+        const wrapper = (eventObj: any) => {
+            try {
+                const data = eventObj.data ? JSON.parse(eventObj.data) : eventObj.data;
+                cb(data);
+            } catch (error) {
+                // If parsing fails, pass the raw data
+                cb(eventObj.data);
+            }
+        };
+        
+        // Store the mapping
+        if (!this.callbackMap.has(event)) {
+            this.callbackMap.set(event, new Map());
+        }
+        this.callbackMap.get(event)!.set(cb, wrapper);
+        
+        // Add the wrapper as listener
+        this.eventSource.addEventListener(event, wrapper);
+    }
+
+    off(event: string, cb: EventCallback) {
+        // Get the wrapper for this callback
+        const eventCallbacks = this.callbackMap.get(event);
+        if (eventCallbacks) {
+            const wrapper = eventCallbacks.get(cb);
+            if (wrapper) {
+                // Remove the wrapper listener
+                this.eventSource.removeEventListener(event, wrapper);
+                // Clean up the mapping
+                eventCallbacks.delete(cb);
+                
+                // Clean up empty event maps
+                if (eventCallbacks.size === 0) {
+                    this.callbackMap.delete(event);
+                }
+            }
+        }
+    }
+
+    close() {
+        if (this.eventSource) {
+            this.eventSource.close();
+            // Clear all callback mappings
+            this.callbackMap.clear();
+        }
+    }
+}
+
+
 export class RPCClient {
     // keep static aliases for backward compatibility with existing calls
     static token_cb: () => Promise<string>;
     static url = 'http://localhost:3000/rpc';
     static _scid: string;
-    static socket: Socket;
+    static socket: SSEClient;
     static transport: 'http' | 'socket' = 'http';
 
-    constructor(url: string, token_cb: () => Promise<string>, socket_cb?: (socket: Socket) => Promise<any>) {
+    constructor(url: string, token_cb: () => Promise<string>, socket_cb?: (socket: SSEClient) => Promise<any>) {
         RPCClient.token_cb = token_cb;
         RPCClient.url = url;
         RPCClient._scid = uuid()
         if(socket_cb)this.connectSocket(url, socket_cb);
     }
 
-    static seTransport(tp: 'http' | 'socket'){
+    seTransport(tp: 'http' | 'socket'){
         RPCClient.transport = tp;
     }
 
     static apiCallback: callbackType = async (method: string, params?: any) => {
-        if(RPCClient.transport === 'http'){
-            return await RPCClient.invokeHttp(method, params);
-        } else if(RPCClient.transport === 'socket'){
-            return await RPCClient.invokeSocket(method, params);
-        }
-    }
-
-    static invokeHttp: callbackType = async (method: string, params?: any) => {
-         try {
+        try {
             if (!RPCClient.token_cb) throw new Error('RPCClient.token_cb is not set');
             const token = await RPCClient.token_cb();
             const response = await fetch(`${RPCClient.url}/rpc`, {
@@ -72,22 +170,6 @@ export class RPCClient {
         } catch (error) {
             console.error("Error calling API:", error);
             throw error;
-        }
-    }
-
-    static invokeSocket: callbackType = async (method: string, params?: any) => {
-        if(RPCClient.socket) {
-            return new Promise((resolve, reject) => {
-                RPCClient.socket.emit('function_call', { method, params });
-                RPCClient.socket.once('function_response', (response: any) => {
-                    resolve(response);
-                });
-
-                // set a timeout for the response
-                setTimeout(() => {
-                    reject(new Error('Socket API call timed out'));
-                }, 20000);
-            });
         }
     }
 
@@ -117,20 +199,15 @@ export class RPCClient {
         }
     }
 
-    async connectSocket(url: string, socket_cb:(socket: Socket) => Promise<any>) {
-        try {
-            const socket = io(url, {
-                auth: {
-                    authorization: await RPCClient.token_cb(),
-                    _scid: RPCClient._scid
-                }
-            });
-            RPCClient.socket = socket;
-            if(socket_cb)socket_cb(socket);
-        } catch (error: any) {
-            console.error('Error initializing socket:', error.message);
+     async connectSocket(url: string, socket_cb:(socket: SSEClient) => Promise<any>) {
+            try {
+                const socket = new SSEClient()
+                socket.connect(url, RPCClient._scid, RPCClient.token_cb, socket_cb);
+                RPCClient.socket = socket;
+            } catch (error: any) {
+                console.error('Error initializing socket:', error.message);
+            }
         }
-    }
 
 
     UserService = {

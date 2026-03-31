@@ -1,9 +1,16 @@
 import { z } from 'zod';
 import { ttc } from './index';
+import { Response } from 'express';
 
 // Example service to demonstrate automatic schema generation
 export class UserService {
-  
+
+  streamObjects: Map<string, Response>;
+
+  constructor() {
+    this.streamObjects = new Map();
+  }
+
   // Method with explicit schema and documentation
   @ttc.describe({
     doc: "Creates a new user with validation for name, email, and age",
@@ -39,7 +46,7 @@ export class UserService {
   }
 
   // Method with single object parameter - auto schema generation
-  @ttc.describe()
+  @ttc.describe({})
   async updateUser(userData: { id: string; name?: string; email?: string }) {
     // Will generate schema based on the object type if possible
     return {
@@ -49,7 +56,7 @@ export class UserService {
   }
 
   // Method with no parameters
-  @ttc.describe()
+  @ttc.describe({})
   async getAllUsers() {
     return [
       { id: '1', name: 'John', email: 'john@example.com' },
@@ -58,18 +65,27 @@ export class UserService {
   }
 
   // Method with authentication and documentation
-  @ttc.describe({ 
+  @ttc.describe({
     auth: true,
     doc: "Deletes a user by ID - requires authentication"
   })
   async deleteUser(userId: string, boss: string[]) {
-    const { auth } = ttc.requestContext(arguments);
-    console.log('User performing deletion:', auth);
-    return { success: true, deletedId: userId };
+    const { auth, _scid } = ttc.requestContext(arguments);
+    console.log('User performing deletion:', auth, _scid);
+    setTimeout(() => {
+      ttc.emit(_scid, "message", { success: true, deletedId: userId });
+      // const socket = ttc.io(_scid);
+      // if(socket){
+      //   socket.emit("message", { success: true, deletedId: userId })
+      // } else {
+
+      // }
+    }, 3000);
+    return "done"
   }
 
   // Method with file upload and documentation
-  @ttc.describe({ 
+  @ttc.describe({
     media: true,
     doc: "Uploads a profile picture for a user with description",
     inputSchema: z.object({
@@ -77,14 +93,10 @@ export class UserService {
       description: z.string()
     })
   })
-  async uploadProfilePicture(data: {userId: string, description: string}) {
-    const { file } = ttc.requestContext(arguments);
+  async uploadProfilePicture(data: { userId: string, description: string }) {
+    const { file, _scid } = ttc.requestContext(arguments);
     const { userId, description } = data;
-    return {
-      userId,
-      description,
-      filename: file?.originalname,
-      size: file?.size
-    };
+    return "done"
   }
+
 }

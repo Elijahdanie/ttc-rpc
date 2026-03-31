@@ -29,6 +29,7 @@ Thumbs.db
 **/*.test.ts
 **/*.spec.ts
 coverage/
+sse-client.ts
 
 PUBLISHING.md
 

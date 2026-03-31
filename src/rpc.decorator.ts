@@ -4,8 +4,7 @@ import { Response, Request } from "express";
 import { object, ZodSchema, z, string, number, boolean, any, unknown, array } from "zod";
 // import zodToJsonSchema from "zod-to-json-schema";
 import { handleDefaultMiddleWare } from "./server";
-import { ttcSocket } from "./socket";
-import { Socket } from "socket.io";
+import { SSEManager, SSESocket } from "./sse";
 
 export type statusType = 'success' | 'error' | 'notFound' | 'unauthorized';
 
@@ -49,12 +48,12 @@ export type DecoratorConfig = {
 export class ttc {
     private static app: any;
     private static generateClient: boolean;
-    static socket: ttcSocket;
+    static socket: SSEManager;
 
     private static rpcRegistry: Record<string, registryInfo> = {};
 
     static authCb: (token: string, authContext: string[], funcName: string) => Promise<any>;
-    private static socketCb: (socket: Socket) => Promise<any>;
+    private static socketCb: (socket: SSESocket) => Promise<any>;
 
     // Helper function to convert TypeScript types to Zod schemas
     private static createZodSchemaFromParams(paramNames: string[], paramTypes: any[]): ZodSchema<any> {
@@ -254,6 +253,14 @@ export class ttc {
         return this.socket.clients.get(_scid);
     }
 
+    static emit(_scid: string, event: string, data: any){
+        if(this.io(_scid)){
+            this.io(_scid).emit(event, data);
+        } else {
+            this.socket.cacheRetry(_scid, event, data)
+        }
+    }
+
     static process_auth(token: string) {
         try {
             const result = token.split(":");
@@ -407,7 +414,7 @@ export class ttc {
         app: any;
         modules: any[];
         authCb?: (token: string, authContext: string[]) => Promise<any>;
-        socketCb?: (socket: Socket) => Promise<any>;
+        socketCb?: (socket: SSESocket) => Promise<any>;
         generate_client?: boolean;
         options?: {
             requestSizeLimit?: string;
@@ -455,9 +462,9 @@ export class ttc {
         if (!this.app) {
             throw new Error("App not initialized");
         }
-        const server = require('http').createServer(this.app);
-        this.socket = new ttcSocket(server, this.authCb, this.socketCb);
-        server.listen(port, () => {
+        // const server = require('http').createServer(this.app);
+        this.socket = new SSEManager(this.app, this.authCb, this.socketCb);
+        this.app.listen(port, () => {
             console.log(`[server]: Server is running on port ${port}`);
             if (this.generateClient) {
                 const script = ttc.generateClientScript();
@@ -638,7 +645,6 @@ export class ttc {
 
         // Final output as a class with generic rpcResponseType
         return `
-import { io, Socket } from "socket.io-client";
 
 export type callbackType = (method: string, params?: any) => Promise<any>;
 export type mediaCallbackType = (method: string, params?: any, file?: any) => Promise<any>;
@@ -650,65 +656,160 @@ export type rpcResponseType<T = any> = {
 
 let _Scid_server_cache: string = '';
 
+const getDefault = () => {
+    const fs = require('fs');
+    const path = ".ttc_id.txt";
+    if(fs.existsSync(path)){
+        const scid = fs.readFileSync(path, "utf8");
+        if(scid){
+            return scid;
+        }
+    }
+}
+
+const saveScid = (scid: string) => {
+    const fs = require('fs');
+    const path = ".ttc_id.txt";
+    fs.writeFileSync(path, scid);
+}
+
 const uuid = () => {
     const key = 'ttc_scid';
-    let sid = (typeof localStorage !== 'undefined') ? localStorage.getItem(key) : _Scid_server_cache;
+    let sid = (typeof localStorage !== 'undefined') ? localStorage.getItem(key) : _Scid_server_cache ? _Scid_server_cache : getDefault();
     if (!sid) {
         sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
         if (typeof localStorage !== 'undefined') {
             localStorage.setItem(key, sid);
         } else {
-            _Scid_server_cache = sid;
+            saveScid(sid);
         }
     }
+    _Scid_server_cache = sid;
     return sid;
 }
+
+
+// Minimal EventSource interface
+interface TTCEventSource {
+    addEventListener(type: string, listener: (event: any) => void): void;
+    removeEventListener(type: string, listener: (event: any) => void): void;
+    close(): void;
+}
+
+type EventCallback = (data: any) => any;
+
+export class SSEClient {
+
+    private eventSource: TTCEventSource;
+    private EventSourceClass: any;
+    private callbackMap: Map<string, Map<EventCallback, (event: any) => void>> = new Map();
+
+    constructor() {
+        // Check if we're in a browser environment
+        if (typeof window !== 'undefined' && 'EventSource' in window) {
+            // Use native browser EventSource
+            this.EventSourceClass = window.EventSource;
+        } else {
+            // Node.js environment - will dynamically import
+            this.EventSourceClass = null;
+        }
+    }
+
+    async connect(url: string, scid: string, token_cb: () => Promise<string>,
+        socket_cb: (socket: SSEClient) => Promise<any>) {
+        // For Node.js, dynamically import eventsource if not already available
+        if (!this.EventSourceClass && typeof window === 'undefined') {
+            try {
+                // Dynamic import for Node.js
+                const { EventSource } = await import('eventsource');
+                this.EventSourceClass = EventSource;
+            } catch (error) {
+                throw new Error('eventsource package is required for Node.js environments, Please install it with: npm install eventsource');
+            }
+        }
+
+        const _url = \`\${url}/stream?scid=\${scid}\`;
+
+        await fetch(\`\${_url}\`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': await token_cb()
+            }
+        });
+
+        // Create EventSource connection
+        this.eventSource = new this.EventSourceClass(\`\${_url}\`) as TTCEventSource;
+        socket_cb(this);
+    }
+
+    on(event: string, cb: EventCallback) {
+        // Create wrapper function that parses the data
+        const wrapper = (eventObj: any) => {
+            try {
+                const data = eventObj.data ? JSON.parse(eventObj.data) : eventObj.data;
+                cb(data);
+            } catch (error) {
+                // If parsing fails, pass the raw data
+                cb(eventObj.data);
+            }
+        };
+        
+        // Store the mapping
+        if (!this.callbackMap.has(event)) {
+            this.callbackMap.set(event, new Map());
+        }
+        this.callbackMap.get(event)!.set(cb, wrapper);
+        
+        // Add the wrapper as listener
+        this.eventSource.addEventListener(event, wrapper);
+    }
+
+    off(event: string, cb: EventCallback) {
+        // Get the wrapper for this callback
+        const eventCallbacks = this.callbackMap.get(event);
+        if (eventCallbacks) {
+            const wrapper = eventCallbacks.get(cb);
+            if (wrapper) {
+                // Remove the wrapper listener
+                this.eventSource.removeEventListener(event, wrapper);
+                // Clean up the mapping
+                eventCallbacks.delete(cb);
+                
+                // Clean up empty event maps
+                if (eventCallbacks.size === 0) {
+                    this.callbackMap.delete(event);
+                }
+            }
+        }
+    }
+
+    close() {
+        if (this.eventSource) {
+            this.eventSource.close();
+            // Clear all callback mappings
+            this.callbackMap.clear();
+        }
+    }
+}
+
 
 export class ${clientName} {
     // keep static aliases for backward compatibility with existing calls
     static token_cb: () => Promise<string>;
     static url = 'http://localhost:3000/rpc';
     static _scid: string;
-    static socket: Socket;
-    static transport: 'http' | 'socket' = 'http';
+    static socket: SSEClient;
 
-    constructor(url: string, token_cb: () => Promise<string>, socket_cb?: (socket: Socket) => Promise<any>) {
+    constructor(url: string, token_cb: () => Promise<string>, socket_cb?: (socket: SSEClient) => Promise<any>) {
         ${clientName}.token_cb = token_cb;
         ${clientName}.url = url;
         ${clientName}._scid = uuid()
         if(socket_cb)this.connectSocket(url, socket_cb);
     }
 
-    seTransport(tp: 'http' | 'socket'){
-        ${clientName}.transport = tp;
-    }
-
-    static invokeSocket: callbackType = async (method: string, params?: any) => {
-        if(${clientName}.socket) {
-            ${clientName}.socket.emit('function_call', { method, params });
-            return new Promise((resolve, reject) => {
-                ${clientName}.socket.once('function_response', (response: any) => {
-                    resolve(response);
-                });
-
-                // set a timeout for the response
-                setTimeout(() => {
-                    reject(new Error('Socket API call timed out'));
-                }, 20000);
-            });
-        }
-    }
-
     static apiCallback: callbackType = async (method: string, params?: any) => {
-        if(${clientName}.transport === 'http'){
-            return await ${clientName}.invokeHttp(method, params);
-        } else if(${clientName}.transport === 'socket'){
-            return await ${clientName}.invokeSocket(method, params);
-        }
-    }
-
-    static invokeHttp: callbackType = async (method: string, params?: any) => {
         try {
             if (!${clientName}.token_cb) throw new Error('${clientName}.token_cb is not set');
             const token = await ${clientName}.token_cb();
@@ -756,20 +857,15 @@ export class ${clientName} {
         }
     }
 
-    async connectSocket(url: string, socket_cb:(socket: Socket) => Promise<any>) {
-        try {
-            const socket = io(url, {
-                auth: {
-                    authorization: await ${clientName}.token_cb(),
-                    _scid: ${clientName}._scid
-                }
-            });
-            if(socket_cb)socket_cb(socket);
-            ${clientName}.socket = socket;
-        } catch (error: any) {
-            console.error('Error initializing socket:', error.message);
+     async connectSocket(url: string, socket_cb:(socket: SSEClient) => Promise<any>) {
+            try {
+                const socket = new SSEClient()
+                socket.connect(url, ${clientName}._scid, RPCClient.token_cb, socket_cb);
+                ${clientName}.socket = socket;
+            } catch (error: any) {
+                console.error('Error initializing socket:', error.message);
+            }
         }
-    }
 
 
 ${serviceBlocks}

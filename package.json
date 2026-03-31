@@ -8,7 +8,7 @@
     "build": "tsc",
     "dev": "ts-node src/example.ts",
     "start": "node dist/index.js",
-    "test:rpc-info": "ts-node src/test-rpc-info.ts",
+    "test": "ts-node src/test.ts",
     "prepublishOnly": "npm run build && node validate-package.js",
     "clean": "rm -rf dist",
     "validate": "node validate-package.js"
@@ -36,11 +36,11 @@
     "@types/multer": "^2.0.0",
     "cors": "2.8.5",
     "dotenv": "^17.2.1",
+    "eventsource": "^4.1.0",
     "express": "4.18.2",
     "multer": "^2.0.2",
+    "node-fetch": "^3.3.2",
     "reflect-metadata": "^0.2.2",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1",
     "typedi": "^0.10.0"
   },
   "devDependencies": {
@@ -80,5 +80,6 @@
     "dist/zodToTs.js.map",
     "dist/zodToTs.d.ts.map",
     "README.md"
-  ]
+  ],
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
