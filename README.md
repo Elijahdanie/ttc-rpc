@@ -561,12 +561,6 @@ type rpcResponseType = {
 ### `/rpc` - Main RPC endpoint
 POST endpoint for all RPC method calls.
 
-### `/methods` - Client generation
-GET endpoint that returns the generated TypeScript client code.
-
-### `/api-docs` - API Documentation
-GET endpoint that returns the full API documentation in JSON format.
-
 ## Socket.IO Support
 
 TTC-RPC includes built-in Socket.IO support for real-time communication:
