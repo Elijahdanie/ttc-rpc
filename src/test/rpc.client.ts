@@ -221,6 +221,17 @@ export class RPCClient {
             }
         }
 
+                ttcCore = {
+        /**
+         * sends a message to the ai
+         *
+         * @param {message: string}
+         * @returns {Promise<rpcResponseType<any>>}
+         */
+        async chatAI(message: string): Promise<rpcResponseType<any>> {
+            return await RPCClient.apiCallback('ttcCore.chatAI', [message]);
+        }
+    }
 
     UserService = {
         /**

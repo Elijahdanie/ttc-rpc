@@ -43,21 +43,28 @@ const uuid = () => {
     return sid;
 }
 
-
 // Minimal EventSource interface
 interface TTCEventSource {
     addEventListener(type: string, listener: (event: any) => void): void;
     removeEventListener(type: string, listener: (event: any) => void): void;
     close(): void;
+    onopen: ((event: any) => void) | null;
+    onmessage: ((event: any) => void) | null;
+    onerror: ((event: any) => void) | null;
+    readyState: number; // 0=CONNECTING, 1=OPEN, 2=CLOSED
 }
 
 type EventCallback = (data: any) => any;
 
 export class SSEClient {
 
-    private eventSource: TTCEventSource;
+    private eventSource: TTCEventSource = {} as any;
     private EventSourceClass: any;
     private callbackMap: Map<string, Map<EventCallback, (event: any) => void>> = new Map();
+    private heartbeatInterval: NodeJS.Timeout | null = null;
+    private lastHeartbeat: number = 0;
+    private isConnected: boolean = false;
+    private heartbeatTimeout = 30000; // 30 seconds
 
     constructor() {
         // Check if we're in a browser environment
@@ -84,18 +91,42 @@ export class SSEClient {
         }
 
         const _url = `${url}/stream?scid=${scid}`;
-
-        await fetch(`${_url}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': await token_cb()
-            }
-        });
+        const token = await token_cb();
 
         // Create EventSource connection
-        this.eventSource = new this.EventSourceClass(`${_url}`) as TTCEventSource;
-        socket_cb(this);
+        this.eventSource = new this.EventSourceClass(_url, {
+            fetch: (input: any, init: any) =>
+                fetch(input, {
+                    ...init,
+                    headers: {
+                        ...init.headers,
+                        Authorization: token
+                    },
+                }),
+        }) as TTCEventSource;
+
+        // Set up standard EventSource handlers
+        this.eventSource.onopen = () => {
+            // console.log('[SSEClient] Connection established');
+            this.isConnected = true;
+            this.startHeartbeat();
+        };
+
+        this.eventSource.onerror = (error) => {
+            // console.error('[SSEClient] Connection error:', error);
+            this.handleDisconnect('error', error);
+        };
+
+        // Wait for 'open' event before calling socket callback
+        this.eventSource.addEventListener('connect', async () => {
+            // console.log('[SSEClient] SSE open event received');
+            await socket_cb(this);
+        });
+
+        // Listen for server-sent heartbeat/ping events
+        this.eventSource.addEventListener('ping', () => {
+            this.lastHeartbeat = Date.now();
+        });
     }
 
     on(event: string, cb: EventCallback) {
@@ -109,13 +140,13 @@ export class SSEClient {
                 cb(eventObj.data);
             }
         };
-        
+
         // Store the mapping
         if (!this.callbackMap.has(event)) {
             this.callbackMap.set(event, new Map());
         }
         this.callbackMap.get(event)!.set(cb, wrapper);
-        
+
         // Add the wrapper as listener
         this.eventSource.addEventListener(event, wrapper);
     }
@@ -130,7 +161,7 @@ export class SSEClient {
                 this.eventSource.removeEventListener(event, wrapper);
                 // Clean up the mapping
                 eventCallbacks.delete(cb);
-                
+
                 // Clean up empty event maps
                 if (eventCallbacks.size === 0) {
                     this.callbackMap.delete(event);
@@ -139,12 +170,81 @@ export class SSEClient {
         }
     }
 
+    private startHeartbeat() {
+        this.lastHeartbeat = Date.now();
+
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+        }
+
+        this.heartbeatInterval = setInterval(() => {
+            if (!this.isConnected) return;
+
+            // Check if we've missed heartbeats
+            const timeSinceLastHeartbeat = Date.now() - this.lastHeartbeat;
+            if (timeSinceLastHeartbeat > this.heartbeatTimeout) {
+                console.warn('[SSEClient] Heartbeat timeout, assuming disconnect');
+                this.handleDisconnect('timeout', `No heartbeat for ${timeSinceLastHeartbeat}ms`);
+            }
+
+            // Check EventSource readyState
+            if (this.eventSource.readyState === 2) { // CLOSED
+                console.warn('[SSEClient] EventSource in CLOSED state');
+                this.handleDisconnect('closed', 'EventSource readyState is CLOSED');
+            }
+        }, 5000); // Check every 5 seconds
+    }
+
+    private stopHeartbeat() {
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+        }
+    }
+
+    private handleDisconnect(reason: string, details?: any) {
+        if (!this.isConnected) return;
+
+        this.isConnected = false;
+        this.stopHeartbeat();
+
+        // Trigger disconnect event for all registered callbacks
+        this.triggerDisconnectEvent(reason, details);
+    }
+
+    private triggerDisconnectEvent(reason: string, details?: any) {
+        const disconnectCallbacks = this.callbackMap.get('disconnect');
+        if (disconnectCallbacks) {
+            const disconnectData = { reason, details, timestamp: Date.now() };
+
+            // Call each disconnect callback
+            for (const [callback, wrapper] of disconnectCallbacks.entries()) {
+                try {
+                    callback(disconnectData);
+                } catch (error) {
+                    console.error('[SSEClient] Error in disconnect callback:', error);
+                }
+            }
+        }
+    }
+
     close() {
         if (this.eventSource) {
+            this.handleDisconnect('manual', 'Manual close called');
             this.eventSource.close();
             // Clear all callback mappings
             this.callbackMap.clear();
+            this.stopHeartbeat();
         }
+    }
+
+    getConnectionState() {
+        return {
+            isConnected: this.isConnected,
+            readyState: this.eventSource?.readyState ?? -1,
+            lastHeartbeat: this.lastHeartbeat,
+            timeSinceLastHeartbeat: Date.now() - this.lastHeartbeat
+        };
     }
 }
 

@@ -22,5 +22,5 @@
     "emitDecoratorMetadata": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "src/rpc.client.ts", "src/**/*.test.ts", "src/**/test/**/*"]
+  "exclude": ["node_modules", "src/rpc.client.ts"]
 }

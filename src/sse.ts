@@ -21,11 +21,24 @@ export class SSEManager {
     constructor(server: Express, _authCb: (token: string, authContext: string[], funcName: string,) => Promise<any>,
         _socketCb: (socket: SSESocket) => Promise<any>) {
         server.use('/stream', async (request: Request, response: Response) => {
-            // authentication
-            const auth = _authCb ? await _authCb(request.headers.authorization, [], '') : true;
+            const token = request.headers.authorization;
+            const auth = _authCb ? await _authCb(token as string, [], '') : true;
             if (auth) {
                 await this.connect(request, response);
-                await _socketCb(this.clients.get(request.query.scid as string))
+                // Get client socket and call socket callback
+                const clientId = request.query.scid as string;
+                const socket = this.clients.get(clientId);
+                if (socket) {
+                    // Send 'open' event to trigger client's EventSource.onopen
+                    await socket.emit('connect', {
+                        timestamp: new Date().toISOString(),
+                        clientId: clientId,
+                        message: 'Connection established'
+                    });
+                    // Call user's socket callback
+                    await _socketCb(socket);
+                    await this.processRetryCache(clientId);
+                }
             } else {
                 response.status(401).json({
                     message: 'Unauthorized'
@@ -100,8 +113,6 @@ export class SSEManager {
         // Store the response for later events
         this.clients.set(clientId, this.wrapperFunc(clientId, response));
 
-        // process retry cache if exist
-        await this.processRetryCache(clientId);
         // Handle client disconnect
         request.on('close', () => {
             console.log(`Client ${clientId} disconnected`);
@@ -112,7 +123,7 @@ export class SSEManager {
         const heartbeatInterval = setInterval(() => {
             if (this.clients.has(clientId)) {
                 try {
-                    const heartbeatEvent = `event: heartbeat\ndata: ${JSON.stringify({
+                    const heartbeatEvent = `event: ping\ndata: ${JSON.stringify({
                         timestamp: new Date().toISOString(),
                         clientId: clientId
                     })}\n\n`;

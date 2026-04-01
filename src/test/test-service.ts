@@ -73,7 +73,7 @@ export class UserService {
     const { auth, _scid } = ttc.requestContext(arguments);
     console.log('User performing deletion:', auth, _scid);
     setTimeout(() => {
-      ttc.emit(_scid, "message", { success: true, deletedId: userId });
+      ttc.emit(_scid, "function_call", { success: true, deletedId: userId });
       // const socket = ttc.io(_scid);
       // if(socket){
       //   socket.emit("message", { success: true, deletedId: userId })
