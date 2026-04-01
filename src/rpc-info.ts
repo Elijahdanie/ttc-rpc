@@ -32,30 +32,30 @@ export interface RPCServiceInfo {
  */
 export function generateRPCMethodsInfo(): RPCServiceInfo {
     const services: RPCServiceInfo = {};
-    
+
     // Get the registry through the public method
     const registry = ttc.getRegistry();
-    
+
     for (const [fullMethodName, registryEntryRaw] of Object.entries(registry)) {
         const registryEntry = registryEntryRaw as DecoratorConfig;
         const [serviceName, methodName] = fullMethodName.split('.');
-        
+
         // Skip spread methods as they're handled differently
         if (registryEntry.spread || registryEntry.hide) {
             continue;
         }
-        
+
         // Initialize service array if it doesn't exist
         if (!services[serviceName]) {
             services[serviceName] = [];
         }
-        
+
         const methodInfo: RPCMethodInfo = {
             name: methodName,
             description: registryEntry.doc,
             permission: registryEntry.auth as any
         };
-        
+
         // Convert input schema to TypeScript type if it exists
         if (registryEntry.inputSchema) {
             try {
@@ -65,20 +65,23 @@ export function generateRPCMethodsInfo(): RPCServiceInfo {
                 methodInfo.input_schema = null;
             }
         }
-        
+
         // Convert output schema to TypeScript type if it exists
         if (registryEntry.outputSchema) {
             try {
-                methodInfo.output_schema = zodToTs(registryEntry.outputSchema);
+                const no_response = registryEntry.response !== undefined ? registryEntry.response : true;
+                methodInfo.output_schema = no_response ? 'void' : zodToTs(registryEntry.outputSchema);
             } catch (error) {
                 console.warn(`Failed to convert output schema for ${fullMethodName}:`, error);
                 methodInfo.output_schema = null;
             }
+        } else if (registryEntry.response !== undefined && registryEntry.response === false) {
+            methodInfo.output_schema = 'void'
         }
-        
+
         services[serviceName].push(methodInfo);
     }
-    
+
     return services;
 }
 
@@ -89,7 +92,7 @@ export function generateRPCMethodsInfo(): RPCServiceInfo {
 export function generateRPCMethodsList(): RPCMethodInfo[] {
     const services = generateRPCMethodsInfo();
     const methods: RPCMethodInfo[] = [];
-    
+
     for (const [serviceName, serviceMethods] of Object.entries(services)) {
         for (const method of serviceMethods) {
             // Add service context to method name for uniqueness
@@ -99,7 +102,7 @@ export function generateRPCMethodsList(): RPCMethodInfo[] {
             });
         }
     }
-    
+
     return methods;
 }
 
@@ -128,7 +131,7 @@ export function generateAPIDocumentation() {
 export function generateFullAPIDocumentation() {
     const services = generateRPCMethodsInfo();
     const methods = generateRPCMethodsList();
-    
+
     return {
         meta: {
             generator: 'ttc-rpc',

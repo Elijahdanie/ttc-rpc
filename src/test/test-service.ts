@@ -67,21 +67,22 @@ export class UserService {
   // Method with authentication and documentation
   @ttc.describe({
     auth: true,
+    response: false,
     doc: "Deletes a user by ID - requires authentication"
   })
   async deleteUser(userId: string, boss: string[]) {
     const { auth, _scid } = ttc.requestContext(arguments);
     console.log('User performing deletion:', auth, _scid);
-    setTimeout(() => {
-      ttc.emit(_scid, "function_call", { success: true, deletedId: userId });
-      // const socket = ttc.io(_scid);
-      // if(socket){
-      //   socket.emit("message", { success: true, deletedId: userId })
-      // } else {
+    // setTimeout(() => {
+    //   ttc.emit(_scid, "function_call", { success: true, deletedId: userId });
+    //   // const socket = ttc.io(_scid);
+    //   // if(socket){
+    //   //   socket.emit("message", { success: true, deletedId: userId })
+    //   // } else {
 
-      // }
-    }, 3000);
-    return "done"
+    //   // }
+    // }, 3000);
+    // return "done"
   }
 
   // Method with file upload and documentation

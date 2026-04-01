@@ -2,6 +2,7 @@ import express from "express";
 import { config } from "dotenv";
 import { UserService } from "./test-service";
 import { ttc } from "../rpc.decorator";
+import { generateAPIDocumentation, generateFullAPIDocumentation } from "../rpc-info";
 
 config();
 const app = express();
@@ -24,3 +25,7 @@ ttc.init({
 console.log(`
 🚀 TTC-RPC Server started on port ${PORT}
 `);
+
+setTimeout(() => {
+  console.log(generateFullAPIDocumentation())
+}, 1000);

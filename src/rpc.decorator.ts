@@ -209,10 +209,11 @@ export class ttc {
         }
 
         const key = `${className}.${propertyKey}`;
+        console.log(key, config.response);
         ttc.rpcRegistry[key] = {
             params,
             hide: config.hide,
-            response: config.response ? config.response : true,
+            response: config.response === undefined ? true: config.response,
             param_index: paramNames.length,
             inputSchema: generatedInputSchema,
             outputSchema: config?.outputSchema,
@@ -395,6 +396,7 @@ export class ttc {
         };
 
         // const args_ = 
+        console.log(funcRegistry.response, 'RESPONSE PARAMETER')
         try {
             const response = await serviceInstance[methodName](...args);
             if (response) {
