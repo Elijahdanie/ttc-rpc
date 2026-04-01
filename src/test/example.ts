@@ -1,8 +1,7 @@
 import express from "express";
 import { config } from "dotenv";
-import { ttc } from "./index";
 import { UserService } from "./test-service";
-import { RPCClient } from "./rpc.client";
+import { ttc } from "../rpc.decorator";
 
 config();
 const app = express();

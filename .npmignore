@@ -25,6 +25,9 @@ logs/
 .DS_Store
 Thumbs.db
 
+test.js
+test.ts
+
 # Test files
 **/*.test.ts
 **/*.spec.ts

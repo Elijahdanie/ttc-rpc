@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { ttc } from './index';
 import { Response } from 'express';
+import { ttc } from '../rpc.decorator';
 
 // Example service to demonstrate automatic schema generation
 export class UserService {
