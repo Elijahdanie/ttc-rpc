@@ -5,6 +5,7 @@ import { object, ZodSchema, z, string, number, boolean, any, unknown, array } fr
 // import zodToJsonSchema from "zod-to-json-schema";
 import { handleDefaultMiddleWare } from "./server";
 import { SSEManager, SSESocket } from "./sse";
+import { SSECache } from "./sse-retry-cache";
 
 export type statusType = 'success' | 'error' | 'notFound' | 'unauthorized';
 
@@ -253,11 +254,15 @@ export class ttc {
         return this.socket.clients.get(_scid);
     }
 
-    static emit(_scid: string, event: string, data: any){
-        if(this.io(_scid)){
+    static emit(_scid: string, event: string, data: any) {
+        if (this.io(_scid)) {
             this.io(_scid).emit(event, data);
         } else {
-            this.socket.cacheRetry(_scid, event, data)
+            SSECache.cache(_scid, {
+                event,
+                data,
+                eta: Date.now()
+            });
         }
     }
 
@@ -397,7 +402,7 @@ export class ttc {
                     status: 'success',
                     data: response
                 }
-            } else if (!funcRegistry.response){
+            } else if (!funcRegistry.response) {
                 return {
                     status: 'success'
                 }

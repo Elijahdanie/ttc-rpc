@@ -8,6 +8,9 @@ node_modules/
 logs/
 *.log
 
+.ttc_id.txt
+sse-cache.json
+
 # Environment files
 .env
 .env.local

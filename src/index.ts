@@ -1,7 +1,7 @@
 // Main exports for the ttc-rpc package
 export { ttc } from './rpc.decorator';
 export { handleDefaultMiddleWare } from './server';
-
+export { SSESocket } from './sse';
 // Export RPC info utilities
 export { 
   generateRPCMethodsInfo, 

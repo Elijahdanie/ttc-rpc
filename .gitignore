@@ -7,3 +7,5 @@ dev.db
 .env
 dist
 .tentarcles.bot
+sse-cache.json.
+.ttc_id.txt

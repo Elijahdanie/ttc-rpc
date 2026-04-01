@@ -5,8 +5,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
     "strict": false,
     "strictNullChecks": false,
     "noImplicitAny": false,

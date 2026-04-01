@@ -1,4 +1,5 @@
 import { Request, Response, Express } from "express";
+import { SSECache } from "./sse-retry-cache";
 
 
 
@@ -16,7 +17,6 @@ export type TTCSSEEventData = {
 export class SSEManager {
 
     clients: Map<string, SSESocket> = new Map();
-    retryCache: Map<string, Set<TTCSSEEventData>> = new Map();
 
     constructor(server: Express, _authCb: (token: string, authContext: string[], funcName: string,) => Promise<any>,
         _socketCb: (socket: SSESocket) => Promise<any>) {
@@ -33,11 +33,6 @@ export class SSEManager {
             }
         })
 
-        // check for expired events 
-        setInterval(()=>{
-            
-        }, 5000)
-
     }
 
     get = (id: string) => {
@@ -51,28 +46,32 @@ export class SSEManager {
             emit: (event: string, data) => {
                 return new Promise((resolve, reject) => {
                     if (response) {
-                    try {
-                        // Proper SSE format: event: <event-name>\ndata: <data>\n\n
-                        const dataString = typeof data === 'object' ? JSON.stringify(data) : data;
-                        const clientEvent = `event: ${event}\ndata: ${dataString}\n\n`;
-                        console.log(clientEvent);
-                        response.write(clientEvent, (error) => {
-                            // console.log(error, 'error');
-                            if(error){
-                                this.cacheRetry(clientId, event, data);
-                                reject(false);
-                            } else {
-                                resolve(true)
-                            }
-                        });
-                        return true;
-                    } catch (error) {
-                        console.log(`Failed to send event to client ${clientId}:`, error);
-                        this.clients.delete(clientId);
-                        return false;
+                        try {
+                            // Proper SSE format: event: <event-name>\ndata: <data>\n\n
+                            const dataString = typeof data === 'object' ? JSON.stringify(data) : data;
+                            const clientEvent = `event: ${event}\ndata: ${dataString}\n\n`;
+                            console.log(clientEvent);
+                            response.write(clientEvent, (error) => {
+                                // console.log(error, 'error');
+                                if (error) {
+                                    SSECache.cache(clientId, {
+                                        event,
+                                        data,
+                                        eta: Date.now()
+                                    });
+                                    reject(false);
+                                } else {
+                                    resolve(true)
+                                }
+                            });
+                            return true;
+                        } catch (error) {
+                            console.log(`Failed to send event to client ${clientId}:`, error);
+                            this.clients.delete(clientId);
+                            return false;
+                        }
                     }
-                }
-                return false;
+                    return false;
                 })
             }
         }
@@ -140,32 +139,16 @@ export class SSEManager {
 
     processRetryCache = async (_scid: string) => {
         const socket = this.clients.get(_scid);
-        const cachedSet = this.retryCache.get(_scid);
+        const cachedSet = SSECache.get(_scid);
 
-        if(cachedSet && cachedSet.size > 0){
-            for (const payload of cachedSet){
+        if (cachedSet && cachedSet.size > 0) {
+            for (const payload of cachedSet) {
                 await socket.emit(payload.event, payload.data);
                 // cachedSet.delete(payload)
                 // console.log('emmiting', cachedSet)
             }
             // console.log('deleting', _scid)
-            setTimeout(()=>{
-                this.retryCache.delete(_scid);
-            }, 2000);
+            SSECache.delete(_scid);
         }
-    }
-
-    cacheRetry = (_scid: string, event: string, data: any) => {
-        let cacheSet = this.retryCache.get(_scid);
-        if (!cacheSet) {
-            cacheSet = new Set();
-        }
-        cacheSet.add({
-            event, 
-            data,
-            eta: Date.now()
-        })
-        this.retryCache.set(_scid, cacheSet);
-        console.log(this.retryCache);
     }
 }

@@ -43,4 +43,18 @@ has not been updated to zod 4
 - Updated server.ts to comment out /methods and /api-docs endpoints by default
 - Version bump to 2.1.7
 
-## 
+## 1 April 2026
+- Switched from Socket.io to SSE for server to client messaging
+- Added persistent file-based cache system for SSEManager with automatic cleanup
+- Implemented SSERetryCache class for event caching with file persistence
+- Updated SSEManager to use file cache instead of in-memory retryCache
+- Added cache cleanup running every 10 minutes, removing entries older than 5 minutes
+- Fixed cache deletion logic to only remove events after successful emission
+- Updated tsconfig.json to exclude test files and rpc.client.ts from compilation
+- Added comprehensive testing for SSE cache integration
+- Fixed SSE event formatting and data parsing issues
+- Enhanced error handling and logging throughout SSE implementation
+- Optimized cleanExpiredCache function for better performance
+- Fixed file serialization/deserialization for Map/Set structures
+- Improved duplicate checking with composite key approach
+- Added error handling for corrupted cache files
