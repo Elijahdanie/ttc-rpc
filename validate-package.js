@@ -19,6 +19,12 @@ const requiredFiles = [
   'dist/rpc.decorator.d.ts',
   'dist/server.js',
   'dist/server.d.ts',
+  'dist/sse.js',
+  'dist/sse.d.ts',
+  'dist/sse-retry-cache.js',
+  'dist/sse-retry-cache.d.ts',
+  'dist/zodToTs.js',
+  'dist/zodToTs.d.ts',
   'README.md'
 ];
 

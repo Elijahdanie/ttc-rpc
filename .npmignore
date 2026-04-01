@@ -35,7 +35,6 @@ test.ts
 **/*.test.ts
 **/*.spec.ts
 coverage/
-sse-client.ts
 
 PUBLISHING.md
 
