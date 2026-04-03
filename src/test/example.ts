@@ -27,5 +27,5 @@ console.log(`
 `);
 
 setTimeout(() => {
-  console.log(generateFullAPIDocumentation())
+  // console.log(generateFullAPIDocumentation())
 }, 1000);

@@ -6,6 +6,7 @@ import { SSECache } from "./sse-retry-cache";
 export type SSESocket = {
     id: string;
     emit: (event: string, data: any) => Promise<boolean>
+    close: ()=> void
 }
 
 export type TTCSSEEventData = {
@@ -63,7 +64,7 @@ export class SSEManager {
                             // Proper SSE format: event: <event-name>\ndata: <data>\n\n
                             const dataString = typeof data === 'object' ? JSON.stringify(data) : data;
                             const clientEvent = `event: ${event}\ndata: ${dataString}\n\n`;
-                            console.log(clientEvent);
+                            // console.log(clientEvent);
                             response.write(clientEvent, (error) => {
                                 // console.log(error, 'error');
                                 if (error) {
@@ -86,6 +87,17 @@ export class SSEManager {
                     }
                     return false;
                 })
+            },
+            close: () => {
+                try {
+                    if (response && !response.writableEnded) {
+                        response.end();
+                        console.log(`[SSE] Stream closed for client ${clientId}`);
+                    }
+                    this.clients.delete(clientId);
+                } catch (error) {
+                    console.error(`[SSE] Error closing stream for ${clientId}:`, error);
+                }
             }
         }
     }
@@ -111,7 +123,16 @@ export class SSEManager {
         response.write(connectEvent);
 
         // Store the response for later events
-        this.clients.set(clientId, this.wrapperFunc(clientId, response));
+        const existingClient = this.clients.get(clientId);
+        if (existingClient) {
+            // Clean up previous connection
+            existingClient.close();
+            // Ensure it's removed from map
+            this.clients.delete(clientId);
+        }
+        
+        const socket = this.wrapperFunc(clientId, response);
+        this.clients.set(clientId, socket);
 
         // Handle client disconnect
         request.on('close', () => {

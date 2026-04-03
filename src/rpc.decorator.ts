@@ -209,7 +209,7 @@ export class ttc {
         }
 
         const key = `${className}.${propertyKey}`;
-        console.log(key, config.response);
+        // console.log(key, config.response);
         ttc.rpcRegistry[key] = {
             params,
             hide: config.hide,
