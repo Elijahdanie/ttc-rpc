@@ -58,3 +58,16 @@ has not been updated to zod 4
 - Fixed file serialization/deserialization for Map/Set structures
 - Improved duplicate checking with composite key approach
 - Added error handling for corrupted cache files
+
+
+## 3 April 2026
+- Improved SSE event sequencing and client interface
+- Updated SSEManager to send 'open' event before calling socket callback
+- Enhanced TTCEventSource interface with onopen, onmessage, onerror properties
+- Modified SSEClient to wait for 'open' event before invoking socket callback
+- Ensured proper EventSource lifecycle: connect → open event → callback
+- Added connection logging for better debugging
+- Fixed SSE reconnection logic to properly clean up previous connections
+- Added close() method to SSESocket interface for manual stream termination
+- Updated package.json files array to include all SSE modules
+- Fixed validate-package.js to check for new SSE files
