@@ -1,0 +1,33 @@
+
+
+Application is served through either either a terminal or web interface
+Current directory: /Users/elijah/Desktop/ttcv2/ttc-rpc
+Files:
+📄 .npmignore
+📄 .DS_Store
+📄 ChangeLog.md
+📄 sse-cache.json
+📁 dist
+📄 check.txt
+📄 .tentarcles.bot
+📁 node_modules
+📄 .ttc_id.txt
+📄 README.md
+📄 yarn.lock
+📄 .gitignore
+📄 package.json
+📄 .env
+📄 tsconfig.json
+📁 .git
+📄 validate-package.js
+📁 src
+
+OTHER CONTEXTS
+
+	Friends: [
+  {
+    "id": "ttc_assistant_18371929c84a4c5ea57b81666e42675d",
+    "name": "Goro-Bot",
+    "addedAt": "2026-04-03T22:38:15.925Z"
+  }
+]
