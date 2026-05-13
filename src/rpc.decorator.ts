@@ -395,8 +395,6 @@ export class ttc {
             _scid: edited_auth_args._scid
         };
 
-        // const args_ = 
-        console.log(funcRegistry.response, 'RESPONSE PARAMETER')
         try {
             const response = await serviceInstance[methodName](...args);
             if (response) {
