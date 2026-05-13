@@ -38,6 +38,7 @@ export type DecoratorConfig = {
     outputSchema?: ZodSchema<any>;
     auth?: boolean | string[];
     doc?: string;
+    param_index?: number,
     hide?: boolean,
     response?: boolean,
     spread?: boolean;
@@ -214,7 +215,7 @@ export class ttc {
             params,
             hide: config.hide,
             response: config.response === undefined ? true: config.response,
-            param_index: paramNames.length,
+            param_index: config.param_index ? config.param_index : paramNames.length,
             inputSchema: generatedInputSchema,
             outputSchema: config?.outputSchema,
             auth: config?.auth,
