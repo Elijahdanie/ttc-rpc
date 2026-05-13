@@ -1,0 +1,66 @@
+# FIX: Use Zod Schema Exclusively for Parameter Extraction
+
+## Problem
+The `method.toString()` regex approach breaks when obfuscated. Obfuscation strips parameter names.
+
+## Key Insight
+`paramNames` = parameter names from function signature
+`schemaProperties` = keys from Zod schema (e.g., `{ userId: {...}, name: {...} }`)
+
+**Schema properties ARE the parameter names. No mapping needed.**
+
+
+## Solution
+When `inputSchema` is provided, use `Object.keys(schemaProperties)` as paramNames. Skip string parsing.
+
+## Replace InputSchema Handling (lines 788-805)
+
+OLD:
+```javascript
+if (config?.inputSchema) {
+    const schemaAsJson = zodToJsonSchema(config.inputSchema);
+    const schemaProperties = ttc.getZodTypeName(schemaAsJson.properties || {});
+    
+    if (paramNames.length === 1) {
+        // complex mapping logic
+    } else {
+        params = schemaProperties;
+    }
+    generatedInputSchema = config.inputSchema;
+}
+```
+
+NEW:
+```javascript
+if (config?.inputSchema) {
+    const schemaAsJson = zodToJsonSchema(config.inputSchema);
+    const schemaProperties = ttc.getZodTypeName(schemaAsJson.properties || {});
+    
+    // Schema properties ARE the parameter names - use directly
+    const paramNames = Object.keys(schemaProperties);
+    params = schemaProperties;
+    
+    const key = `${className}.${propertyKey}`;
+    ttc.rpcRegistry[key] = {
+        params,
+        hide: config.hide,
+        response: config.response === undefined ? true : config.response,
+        param_index: paramNames.length,
+        inputSchema: config.inputSchema,
+        outputSchema: config?.outputSchema,
+        auth: config?.auth,
+        media: config?.media,
+        doc: config?.doc,
+        spread: config?.spread ? config.spread : config?.endpoint ? true : false,
+        endpoint: config?.endpoint,
+        validate: config?.validate
+    };
+    return; // EXIT EARLY - no string parsing needed
+}
+```
+
+## Summary
+- When inputSchema provided → use `Object.keys(schemaProperties)` as paramNames
+- No regex, no method.toString(), no function string parsing
+- Early return skips unnecessary code
+- Schema is the source of truth

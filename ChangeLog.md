@@ -71,3 +71,9 @@ has not been updated to zod 4
 - Added close() method to SSESocket interface for manual stream termination
 - Updated package.json files array to include all SSE modules
 - Fixed validate-package.js to check for new SSE files
+
+## 2 April 2025
+- Fixed obfuscation compatibility: When inputSchema is provided, schema properties are now used directly as parameter names
+- Removed dependency on method.toString() regex parsing for schema-based decorators
+- Early return after schema registration skips string parsing entirely
+- Prevents package shaking under obfuscation where parameter names get mangled
