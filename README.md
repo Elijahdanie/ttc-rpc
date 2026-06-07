@@ -52,7 +52,7 @@ const UserResponseSchema = z.object({
 export class UserService {
   
   @ttc.describe({
-    inputSchema: CreateUserSchema,
+    parameterSchema: CreateUserSchema,
     outputSchema: UserResponseSchema
   })
   async createUser(userData: z.infer<typeof CreateUserSchema>) {
@@ -226,7 +226,7 @@ const CreateUserInput = z.object({
 export class UserService {
   @ttc.describe({
     doc: "Creates a new user account with email validation",
-    inputSchema: CreateUserInput
+    parameterSchema: CreateUserInput
   })
   async createUser(userData: z.infer<typeof CreateUserInput>) {
     return { id: generateId(), ...userData, createdAt: new Date() };
@@ -303,11 +303,11 @@ UserService = {
 
 ## Automatic Schema Generation
 
-TTC-RPC can automatically generate Zod schemas from your TypeScript method parameters when `inputSchema` is not explicitly provided. This feature uses TypeScript's reflection capabilities to create validation schemas.
+TTC-RPC can automatically generate Zod schemas from your TypeScript method parameters when `parameterSchema` is not explicitly provided. This feature uses TypeScript's reflection capabilities to create validation schemas.
 
 ### How It Works
 
-When you don't provide an `inputSchema`, TTC-RPC:
+When you don't provide an `parameterSchema`, TTC-RPC:
 
 1. **Analyzes parameter types** using TypeScript's `reflect-metadata`
 2. **Maps TypeScript types to Zod schemas**:
@@ -346,9 +346,9 @@ export class ExampleService {
     return [];
   }
 
-  // ✅ Mixed: explicit inputSchema overrides automatic generation
+  // ✅ Mixed: explicit parameterSchema overrides automatic generation
   @ttc.describe({
-    inputSchema: z.object({
+    parameterSchema: z.object({
       email: z.string().email(),
       age: z.number().min(18)
     })
@@ -388,7 +388,7 @@ Decorator to expose a method as an RPC endpoint.
 | `media` | `boolean` | Enable file upload support | `false` |
 | `spread` | `boolean` | Create custom endpoint instead of standard RPC, removes function from the client script | `false` |
 | `endpoint` | `string` | Custom endpoint path (enables spread) | `undefined` |
-| `inputSchema` | `ZodSchema` | Zod schema for input validation | `undefined` |
+| `parameterSchema` | `ZodSchema` | Zod schema for input validation | `undefined` |
 | `outputSchema` | `ZodSchema` | Zod schema for output validation | `undefined` |
 
 #### Examples
@@ -415,7 +415,7 @@ async uploadMethod() { }
 // Custom endpoint with documentation
 @ttc.describe({ 
   endpoint: '/api/users/create',
-  inputSchema: CreateUserSchema,
+  parameterSchema: CreateUserSchema,
   doc: "Creates a new user via REST endpoint"
 })
 async createUserEndpoint() { }
@@ -423,7 +423,7 @@ async createUserEndpoint() { }
 // With validation and documentation
 @ttc.describe({
   doc: "Validates user data and creates a new user record",
-  inputSchema: z.object({ name: z.string() }),
+  parameterSchema: z.object({ name: z.string() }),
   outputSchema: z.object({ id: z.string(), name: z.string() })
 })
 async validatedMethod(data: { name: string }) { }
