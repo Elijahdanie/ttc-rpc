@@ -34,7 +34,7 @@ export type registryInfo = DecoratorConfig & {
 }
 
 export type DecoratorConfig = {
-    inputSchema?: ZodSchema<any>;
+    parameterSchema?: ZodSchema<any>;
     outputSchema?: ZodSchema<any>;
     auth?: boolean | string[];
     doc?: string;
@@ -158,9 +158,9 @@ export class ttc {
         const types = Reflect.getMetadata("design:paramtypes", target, propertyKey) || [];
         const paramTypes = types.map((type: any) => type?.name || "unknown");
 
-        if (config?.inputSchema) {
+        if (config?.parameterSchema) {
             // Use provided schema
-            const schemaAsJson = zodToJsonSchema(config.inputSchema) as any;
+            const schemaAsJson = zodToJsonSchema(config.parameterSchema) as any;
             const schemaProperties = ttc.getZodTypeName(schemaAsJson.properties || {});
 
             // If the method has one argument, assume the schema defines its type.
@@ -179,7 +179,7 @@ export class ttc {
                 // Otherwise, map schema properties to parameter names.
                 params = schemaProperties;
             }
-            generatedInputSchema = config.inputSchema;
+            generatedInputSchema = config.parameterSchema;
         } else {
             // Generate schema from parameter types
             if (paramNames.length > 0) {
@@ -216,7 +216,7 @@ export class ttc {
             hide: config.hide,
             response: config.response === undefined ? true: config.response,
             param_index: config.param_index ? config.param_index : paramNames.length,
-            inputSchema: generatedInputSchema,
+            parameterSchema: generatedInputSchema,
             outputSchema: config?.outputSchema,
             auth: config?.auth,
             media: config?.media,
@@ -352,11 +352,11 @@ export class ttc {
         }
 
         // Validate input using schema if available
-        if (funcRegistry.validate && funcRegistry.inputSchema && args.length > 0) {
+        if (funcRegistry.validate && funcRegistry.parameterSchema && args.length > 0) {
             try {
                 // For single parameter methods, validate the first argument directly
                 if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
-                    const validatedArgs = funcRegistry.inputSchema.parse(args[0]);
+                    const validatedArgs = funcRegistry.parameterSchema.parse(args[0]);
                     args[0] = validatedArgs;
                 } else if (args.length > 1) {
                     // For multiple parameters, create an object from parameter names and validate
@@ -369,7 +369,7 @@ export class ttc {
                         }
                     });
 
-                    const validatedObj = funcRegistry.inputSchema.parse(paramObj);
+                    const validatedObj = funcRegistry.parameterSchema.parse(paramObj);
 
                     // Update args array with validated values
                     paramNames.forEach((name, index) => {

@@ -16,7 +16,7 @@ export interface RPCServiceInfo {
 
 // interface RegistryEntry {
 //     params: Record<string, any>;
-//     inputSchema?: ZodSchema<any>;
+//     parameterSchema?: ZodSchema<any>;
 //     outputSchema?: ZodSchema<any>;
 //     auth?: boolean;
 //     doc?: string;
@@ -57,9 +57,9 @@ export function generateRPCMethodsInfo(): RPCServiceInfo {
         };
 
         // Convert input schema to TypeScript type if it exists
-        if (registryEntry.inputSchema) {
+        if (registryEntry.parameterSchema) {
             try {
-                methodInfo.input_schema = zodToTs(registryEntry.inputSchema);
+                methodInfo.input_schema = zodToTs(registryEntry.parameterSchema);
             } catch (error) {
                 console.warn(`Failed to convert input schema for ${fullMethodName}:`, error);
                 methodInfo.input_schema = null;

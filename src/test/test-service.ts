@@ -14,7 +14,7 @@ export class UserService {
   // Method with explicit schema and documentation
   @ttc.describe({
     doc: "Creates a new user with validation for name, email, and age",
-    inputSchema: z.object({
+    parameterSchema: z.object({
       name: z.string(),
       email: z.string().email(),
       age: z.number().min(0)
@@ -89,7 +89,7 @@ export class UserService {
   @ttc.describe({
     media: true,
     doc: "Uploads a profile picture for a user with description",
-    inputSchema: z.object({
+    parameterSchema: z.object({
       userId: z.string(),
       description: z.string()
     })

@@ -170,17 +170,30 @@ export class SSEManager {
     }
 
     processRetryCache = async (_scid: string) => {
-        const socket = this.clients.get(_scid);
-        const cachedSet = SSECache.get(_scid);
+        const maxRetries = 5;
+        const retryDelay = 500; // 500ms between retries
+        
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            const socket = this.clients.get(_scid);
+            const cachedSet = SSECache.get(_scid);
 
-        if (cachedSet && cachedSet.size > 0) {
-            for (const payload of cachedSet) {
-                await socket.emit(payload.event, payload.data);
-                // cachedSet.delete(payload)
-                // console.log('emmiting', cachedSet)
+            if (!cachedSet || cachedSet.size === 0) {
+                return; // Nothing to deliver
             }
-            // console.log('deleting', _scid)
-            SSECache.delete(_scid);
+
+            if (socket) {
+                for (const payload of cachedSet) {
+                    await socket.emit(payload.event, payload.data);
+                }
+                SSECache.delete(_scid);
+                return; // Successfully delivered
+            }
+
+            // Socket not ready yet — wait and retry
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
         }
+
+        // After all retries, socket still not available — clear cache to avoid buildup
+        SSECache.delete(_scid);
     }
 }
